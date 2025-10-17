@@ -131,7 +131,7 @@ export function TutoringPage() {
           isCurrentlyAvailable: true
         }
       ];
-      setTutors(sampleTutors);
+      setTutors(sampleTutors as Tutor[]);
     } finally {
       setIsLoading(false);
     }
