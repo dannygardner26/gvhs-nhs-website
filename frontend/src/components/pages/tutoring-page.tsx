@@ -130,8 +130,8 @@ export function TutoringPage() {
           bio: "Experienced in essay writing and literary analysis. Happy to help with any English needs!",
           isCurrentlyAvailable: true
         }
-      ];
-      setTutors(sampleTutors as Tutor[]);
+      ] as Tutor[];
+      setTutors(sampleTutors);
     } finally {
       setIsLoading(false);
     }

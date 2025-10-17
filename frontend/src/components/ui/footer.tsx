@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, Mail, MapPin, Phone } from "lucide-react";
+import { GraduationCap, Mail, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
