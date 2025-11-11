@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// In-memory storage for demo purposes (replace with database in production)
+global.checkedInUsers = new Map(); // userId -> { username, checkedInAt, isCheckedIn }
 
 // Middleware
 app.use(helmet());
@@ -18,18 +20,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gvhs-nhs', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-// Routes
-app.use('/api/events', require('./routes/events'));
-app.use('/api/tutoring', require('./routes/tutoring'));
-app.use('/api/join', require('./routes/join'));
+// Simple checkin routes
+app.use('/api/checkin', require('./routes/checkin-simple'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

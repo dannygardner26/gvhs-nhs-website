@@ -1,10 +1,5 @@
-import { Layout } from "@/components/layout/layout";
-import { TutoringPage } from "@/components/pages/tutoring-page";
+import { TutoringPageSimple } from "@/components/pages/tutoring-page-simple";
 
 export default function Tutoring() {
-  return (
-    <Layout>
-      <TutoringPage />
-    </Layout>
-  );
+  return <TutoringPageSimple />;
 }

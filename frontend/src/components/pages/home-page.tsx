@@ -1,290 +1,231 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, BookOpen, Award, ArrowRight } from "lucide-react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin from "@fullcalendar/interaction";
-
-interface Event {
-  id: string;
-  title: string;
-  start: string;
-  description?: string;
-  location?: string;
-  type?: string;
-}
+import {
+  Award,
+  BookOpen,
+  Users,
+  Heart,
+  Mail,
+  MapPin,
+  Globe,
+  Target
+} from "lucide-react";
 
 export function HomePage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch("http://localhost:3001/api/events");
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-        // Filter upcoming events (next 3 events)
-        const upcoming = data
-          .filter((event: Event) => new Date(event.start) >= new Date())
-          .slice(0, 3);
-        setUpcomingEvents(upcoming);
-      }
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      // Use sample data as fallback
-      const sampleEvents = [
-        {
-          id: "1",
-          title: "NHS Monthly Meeting",
-          start: "2024-11-15T15:30:00",
-          description: "Regular monthly meeting for all NHS members",
-          location: "Room 201",
-          type: "meeting"
-        },
-        {
-          id: "2",
-          title: "Community Food Drive",
-          start: "2024-11-22T09:00:00",
-          description: "Help collect food donations for local families",
-          location: "School Entrance",
-          type: "service"
-        }
-      ];
-      setEvents(sampleEvents);
-      setUpcomingEvents(sampleEvents);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEventClick = (info: { event: { title: string; extendedProps: { location?: string; description?: string; }; }; }) => {
-    alert(`Event: ${info.event.title}\nLocation: ${info.event.extendedProps.location}\nDescription: ${info.event.extendedProps.description}`);
+  const advisorInfo = {
+    name: "Dr. Paige Morabito",
+    title: "NHS Faculty Advisor",
+    email: "pmorabito@gvsd.org",
+    office: "Room 215, Academic Building",
+    officeHours: "Monday-Friday, 2:30-3:30 PM"
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen py-4">
       {/* Hero Section */}
-      <section className="relative nhs-gradient text-white py-20 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Grand Valley High School
-              <br />
-              <span className="text-blue-200">National Honor Society</span>
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-blue-100">
-              Recognizing Scholarship, Leadership, Service, and Character
-            </p>
-            <p className="text-lg mb-12 max-w-2xl mx-auto text-blue-50">
-              Join our community of outstanding students dedicated to academic excellence,
-              meaningful service, and positive leadership in our school and community.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-white text-royal-blue hover:bg-blue-50 hover-glow text-lg px-8 py-3"
-                asChild
-              >
-                <Link href="/tutoring">
-                  Get Tutoring <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-royal-blue text-lg px-8 py-3"
-                asChild
-              >
-                <Link href="/about">Learn More</Link>
-              </Button>
-            </div>
-          </div>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 fade-in">
+            Great Valley High School NHS
+          </h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6 fade-in">
+            Learn about our mission, the four pillars of NHS, and how to join our chapter.
+          </p>
         </div>
       </section>
 
-      {/* CTA Cards Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="hover-glow cursor-pointer slide-up">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-royal-blue rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-white" />
+      {/* Mission Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <Card className="shadow-lg border-l-4 border-royal-blue">
+          <CardHeader>
+            <CardTitle className="flex items-center text-royal-blue text-2xl">
+              <Target className="w-6 h-6 mr-3" />
+              Our Chapter Mission
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <p className="text-lg text-gray-700 leading-relaxed">
+                The Great Valley High School chapter of the National Honor Society serves to recognize
+                those students who have demonstrated excellence in the areas of <span className="font-semibold text-royal-blue">Scholarship</span>,
+                <span className="font-semibold text-royal-blue"> Leadership</span>,
+                <span className="font-semibold text-royal-blue"> Service</span>, and
+                <span className="font-semibold text-royal-blue"> Character</span>.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <BookOpen className="w-8 h-8 text-royal-blue mx-auto mb-2" />
+                  <h3 className="font-semibold text-royal-blue">Scholarship</h3>
+                  <p className="text-sm text-gray-600">Academic excellence and love of learning</p>
                 </div>
-                <CardTitle className="text-xl text-royal-blue">NHS Membership</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-600 mb-6">
-                  Learn about NHS membership through your school counselor and invitation process.
-                </p>
-                <Button asChild className="w-full">
-                  <Link href="/about">Learn More</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover-glow cursor-pointer slide-up" style={{ animationDelay: "0.2s" }}>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-royal-blue rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-8 h-8 text-white" />
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Users className="w-8 h-8 text-royal-blue mx-auto mb-2" />
+                  <h3 className="font-semibold text-royal-blue">Leadership</h3>
+                  <p className="text-sm text-gray-600">Inspiring and guiding others</p>
                 </div>
-                <CardTitle className="text-xl text-royal-blue">Get Tutoring</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-600 mb-6">
-                  Connect with our NHS tutors for academic support in various subjects.
-                </p>
-                <Button asChild className="w-full">
-                  <Link href="/tutoring">Find a Tutor</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover-glow cursor-pointer slide-up" style={{ animationDelay: "0.4s" }}>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-royal-blue rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Award className="w-8 h-8 text-white" />
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Heart className="w-8 h-8 text-royal-blue mx-auto mb-2" />
+                  <h3 className="font-semibold text-royal-blue">Service</h3>
+                  <p className="text-sm text-gray-600">Commitment to community betterment</p>
                 </div>
-                <CardTitle className="text-xl text-royal-blue">Our Mission</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-600 mb-6">
-                  Learn about our commitment to scholarship, leadership, service, and character.
-                </p>
-                <Button asChild className="w-full">
-                  <Link href="/about">Learn More</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Award className="w-8 h-8 text-royal-blue mx-auto mb-2" />
+                  <h3 className="font-semibold text-royal-blue">Character</h3>
+                  <p className="text-sm text-gray-600">Integrity and ethical behavior</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      {/* Calendar and Events Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Upcoming Events
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Stay connected with NHS activities, meetings, and service opportunities
-            </p>
-          </div>
+      {/* How to Join NHS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">How to Join NHS</h2>
+          <p className="text-lg text-gray-600">Understanding the selection process and requirements</p>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Calendar */}
-            <div className="lg:col-span-2">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-royal-blue">
-                    <Calendar className="w-5 h-5 mr-2" />
-                    NHS Calendar
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!isLoading && (
-                    <div className="calendar-container">
-                      <FullCalendar
-                        plugins={[dayGridPlugin, interactionPlugin]}
-                        initialView="dayGridMonth"
-                        events={events}
-                        eventClick={handleEventClick}
-                        height="auto"
-                        headerToolbar={{
-                          left: "prev,next today",
-                          center: "title",
-                          right: "dayGridMonth"
-                        }}
-                        eventDisplay="block"
-                        eventColor="#4169E1"
-                        eventTextColor="#ffffff"
-                      />
-                    </div>
-                  )}
-                  {isLoading && (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="text-gray-500">Loading calendar...</div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Upcoming Events Sidebar */}
-            <div>
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-royal-blue">Next Events</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {upcomingEvents.length > 0 ? (
-                    <div className="space-y-4">
-                      {upcomingEvents.map((event) => (
-                        <div key={event.id} className="border-l-4 border-royal-blue pl-4 py-2">
-                          <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                          <p className="text-sm text-gray-600">
-                            {new Date(event.start).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit"
-                            })}
-                          </p>
-                          {event.location && (
-                            <p className="text-sm text-gray-500">{event.location}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">
-                      No upcoming events scheduled.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* NHS Stats */}
-              <Card className="shadow-lg mt-6">
-                <CardHeader>
-                  <CardTitle className="text-royal-blue">NHS at a Glance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Active Members</span>
-                      <span className="font-semibold text-royal-blue">47</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Service Hours (This Year)</span>
-                      <span className="font-semibold text-royal-blue">1,240</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tutoring Sessions</span>
-                      <span className="font-semibold text-royal-blue">156</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Community Projects</span>
-                      <span className="font-semibold text-royal-blue">12</span>
+        {/* Key Principles */}
+        <div className="mb-6">
+          <Card className="shadow-lg border-l-4 border-royal-blue">
+            <CardHeader>
+              <CardTitle className="flex items-center text-royal-blue text-xl">
+                <Award className="w-5 h-5 mr-2" />
+                NHS Selection Principles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-royal-blue rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">High Academic Honor</p>
+                      <p className="text-gray-600">Cumulative GPA of 3.75 or higher</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-royal-blue rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Four Pillars Required</p>
+                      <p className="text-gray-600">Service, Leadership, and Character are equally important as Scholarship</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-royal-blue rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Membership is a Privilege</p>
+                      <p className="text-gray-600">Not a right - invitation to be a candidate for selection</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-royal-blue rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Selection Process</p>
+                      <p className="text-gray-600">Not an application or election - candidates are evaluated</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Selection Process and Faculty Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center text-royal-blue">
+                <BookOpen className="w-5 h-5 mr-2" />
+                Selection Process Steps
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-royal-blue text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                  <div>
+                    <p className="font-semibold">Academic Eligibility</p>
+                    <p className="text-sm text-gray-600">Students with 3.75+ cumulative GPA are identified</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-royal-blue text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                  <div>
+                    <p className="font-semibold">Candidate Information Form</p>
+                    <p className="text-sm text-gray-600">Eligible students complete detailed form sharing Leadership, Service, and Character examples</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-royal-blue text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                  <div>
+                    <p className="font-semibold">Faculty Input & Records Review</p>
+                    <p className="text-sm text-gray-600">Teachers provide input on character and discipline records are reviewed</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-royal-blue text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                  <div>
+                    <p className="font-semibold">Faculty Council Deliberation</p>
+                    <p className="text-sm text-gray-600">Five-member council evaluates all four pillars equally</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-royal-blue text-white rounded-full flex items-center justify-center text-sm font-bold">5</div>
+                  <div>
+                    <p className="font-semibold">Selection Decision</p>
+                    <p className="text-sm text-gray-600">Students are notified of selection results</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Faculty Advisor */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center text-royal-blue">
+                <Users className="w-5 h-5 mr-2" />
+                Faculty Advisor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">{advisorInfo.name}</h3>
+                  <p className="text-gray-600">{advisorInfo.title}</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 text-royal-blue mr-3" />
+                    <a href={`mailto:${advisorInfo.email}`} className="text-royal-blue hover:underline">
+                      {advisorInfo.email}
+                    </a>
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 text-royal-blue mr-3" />
+                    <span className="text-gray-700">{advisorInfo.office}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <BookOpen className="w-4 h-4 text-royal-blue mr-3" />
+                    <span className="text-gray-700">{advisorInfo.officeHours}</span>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Button asChild className="w-full">
+                    <a href={`mailto:${advisorInfo.email}`}>
+                      Contact Dr. Morabito
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>
