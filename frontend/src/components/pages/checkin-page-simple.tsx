@@ -8,51 +8,37 @@ import { Label } from "@/components/ui/label";
 import { UserCheck, UserX, Users } from "lucide-react";
 
 export function CheckinPageSimple() {
+  const [mode, setMode] = useState<"select" | "existing" | "new">("select"); // select mode, existing user, or new user
   const [userId, setUserId] = useState("");
-  const [username, setUsername] = useState("");
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [currentCount, setCurrentCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    try {
-      // Check if user already has stored credentials
-      const storedUserId = localStorage.getItem("userId");
-      const storedUsername = localStorage.getItem("username");
+    fetchCurrentCount();
 
-      if (storedUserId && storedUsername) {
-        setUserId(storedUserId);
-        setUsername(storedUsername);
-        setIsRegistered(true);
-        checkUserStatus(storedUserId);
+    // Auto logout at specific times (period changes)
+    const interval = setInterval(() => {
+      const now = new Date();
+      const currentTime = now.getHours() * 100 + now.getMinutes();
+
+      // Period change times (converted to HHMM format)
+      const logoutTimes = [839, 931, 1025, 1115, 1245, 1337, 1430]; // 8:39 AM, 9:31 AM, etc.
+
+      const shouldLogout = logoutTimes.some(time => {
+        // Check if current time is within 1 minute of logout time
+        return Math.abs(currentTime - time) <= 1;
+      });
+
+      if (shouldLogout && isCheckedIn) {
+        handleAutoLogout();
       }
+    }, 60000);
 
-      fetchCurrentCount();
-
-      // Auto logout at specific times (period changes)
-      const interval = setInterval(() => {
-        const now = new Date();
-        const currentTime = now.getHours() * 100 + now.getMinutes();
-
-        // Period change times (converted to HHMM format)
-        const logoutTimes = [839, 931, 1025, 1115, 1245, 1337, 1430]; // 8:39 AM, 9:31 AM, etc.
-
-        const shouldLogout = logoutTimes.some(time => {
-          // Check if current time is within 1 minute of logout time
-          return Math.abs(currentTime - time) <= 1;
-        });
-
-        if (shouldLogout && isCheckedIn) {
-          handleAutoLogout();
-        }
-      }, 60000);
-
-      return () => clearInterval(interval);
-    } catch (error) {
-      console.error("Error in useEffect:", error);
-    }
+    return () => clearInterval(interval);
   }, [isCheckedIn]);
 
   const checkUserStatus = async (id: string) => {
@@ -98,29 +84,70 @@ export function CheckinPageSimple() {
     }
   };
 
-  const generateUserId = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  const handleRegister = () => {
-    if (!username.trim()) {
-      setMessage("Please enter a username.");
+  const handleExistingUserCheckin = async () => {
+    if (!userId.trim()) {
+      setMessage("Please enter your User ID.");
       return;
     }
 
-    const newUserId = generateUserId();
-    setUserId(newUserId);
-    setIsRegistered(true);
-
-    // Store in localStorage
+    setLoading(true);
     try {
-      localStorage.setItem("userId", newUserId);
-      localStorage.setItem("username", username);
+      const response = await fetch(`http://localhost:3001/api/checkin/verify-and-checkin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsCheckedIn(true);
+        setMessage(`Successfully checked in! Welcome back, ${data.username}.`);
+        fetchCurrentCount();
+      } else {
+        setMessage(data.message || "User ID not found. Please check your ID or register as a new user.");
+      }
     } catch (error) {
-      console.error("Error storing user data:", error);
+      setMessage("Error connecting to server");
+    }
+    setLoading(false);
+  };
+
+  const handleNewUserRegistration = async () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      setMessage("Please enter both first and last name.");
+      return;
     }
 
-    setMessage(`Your User ID is ${newUserId}. Please save this ID for future use.`);
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:3001/api/checkin/register-and-checkin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim()
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserId(data.userId);
+        setIsCheckedIn(true);
+        setMessage(`Registration successful! Your User ID is ${data.userId}. Please save this for future use.`);
+        fetchCurrentCount();
+      } else {
+        setMessage(data.message || "Error creating user. Please try again.");
+      }
+    } catch (error) {
+      setMessage("Error connecting to server");
+    }
+    setLoading(false);
   };
 
   const handleCheckin = async () => {
@@ -194,33 +221,44 @@ export function CheckinPageSimple() {
               <div className="text-gray-600">Students currently in library</div>
             </div>
 
-            {!isRegistered ? (
+{mode === "select" ? (
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="username">Enter your name</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Your full name"
-                    className="mt-1"
-                  />
+                <div className="text-center mb-6">
+                  <p className="text-gray-600">How would you like to check in?</p>
                 </div>
-                <Button onClick={handleRegister} className="w-full">
-                  Generate My User ID
+
+                <Button
+                  onClick={() => setMode("existing")}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  I have an existing User ID
+                </Button>
+
+                <Button
+                  onClick={() => setMode("new")}
+                  variant="outline"
+                  className="w-full"
+                >
+                  I'm a new user (create User ID)
                 </Button>
               </div>
-            ) : (
+            ) : mode === "existing" ? (
               <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-gray-600">Welcome, {username}!</p>
-                  <p className="text-sm text-gray-500">Your ID: {userId}</p>
+                <div>
+                  <Label htmlFor="userId">Enter your User ID</Label>
+                  <Input
+                    id="userId"
+                    type="text"
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    placeholder="e.g. 123456"
+                    className="mt-1"
+                  />
                 </div>
 
                 {!isCheckedIn ? (
                   <Button
-                    onClick={handleCheckin}
+                    onClick={handleExistingUserCheckin}
                     disabled={loading}
                     className="w-full bg-green-600 hover:bg-green-700"
                   >
@@ -239,27 +277,84 @@ export function CheckinPageSimple() {
                   </Button>
                 )}
 
-                <div className="text-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      try {
-                        localStorage.removeItem("userId");
-                        localStorage.removeItem("username");
-                        setIsRegistered(false);
-                        setUserId("");
-                        setUsername("");
-                        setIsCheckedIn(false);
-                        setMessage("");
-                      } catch (error) {
-                        console.error("Error clearing data:", error);
-                      }
-                    }}
-                  >
-                    Use Different Account
-                  </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode("select");
+                    setUserId("");
+                    setMessage("");
+                  }}
+                  className="w-full"
+                >
+                  Back
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
+
+                {!isCheckedIn ? (
+                  <Button
+                    onClick={handleNewUserRegistration}
+                    disabled={loading}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    {loading ? "Creating account and checking in..." : "Register & Check In"}
+                  </Button>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <p className="text-green-700 font-medium">Successfully checked in!</p>
+                      <p className="text-sm text-green-600 mt-1">Your User ID: {userId}</p>
+                    </div>
+                    <Button
+                      onClick={handleCheckout}
+                      disabled={loading}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      <UserX className="w-4 h-4 mr-2" />
+                      {loading ? "Checking out..." : "Check Out"}
+                    </Button>
+                  </div>
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode("select");
+                    setFirstName("");
+                    setLastName("");
+                    setMessage("");
+                  }}
+                  className="w-full"
+                >
+                  Back
+                </Button>
               </div>
             )}
 

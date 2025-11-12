@@ -153,4 +153,94 @@ router.post('/logout-all', (req, res) => {
   }
 });
 
+// Verify existing user ID and check them in
+router.post('/verify-and-checkin', (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const storage = getStorage();
+    const existingUser = storage.get(userId);
+
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User ID not found. Please check your ID or register as a new user.' });
+    }
+
+    if (existingUser.isCheckedIn) {
+      return res.status(400).json({ message: 'User is already checked in' });
+    }
+
+    // Check in the existing user
+    existingUser.isCheckedIn = true;
+    existingUser.checkedInAt = new Date();
+    storage.set(userId, existingUser);
+
+    console.log(`User ${existingUser.username} (${userId}) checked in at ${existingUser.checkedInAt}`);
+    res.json({
+      message: 'Successfully checked in',
+      userId,
+      username: existingUser.username,
+      checkedInAt: existingUser.checkedInAt
+    });
+  } catch (error) {
+    console.error('Error verifying and checking in user:', error);
+    res.status(500).json({ error: 'Failed to verify and check in user' });
+  }
+});
+
+// Register new user and check them in
+router.post('/register-and-checkin', (req, res) => {
+  try {
+    const { firstName, lastName } = req.body;
+
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: 'First name and last name are required' });
+    }
+
+    const storage = getStorage();
+    const fullName = `${firstName} ${lastName}`;
+
+    // Check if user with this name already exists
+    const existingUserWithName = Array.from(storage.values()).find(user =>
+      user.username.toLowerCase() === fullName.toLowerCase()
+    );
+
+    if (existingUserWithName) {
+      return res.status(400).json({
+        message: `A user with the name "${fullName}" already exists. Please use a different name or contact an administrator.`
+      });
+    }
+
+    // Generate a unique user ID
+    let newUserId;
+    do {
+      newUserId = Math.floor(100000 + Math.random() * 900000).toString();
+    } while (storage.has(newUserId));
+
+    // Create and check in the new user
+    const checkedInAt = new Date();
+    const newUser = {
+      username: fullName,
+      checkedInAt,
+      isCheckedIn: true
+    };
+
+    storage.set(newUserId, newUser);
+
+    console.log(`New user ${fullName} (${newUserId}) registered and checked in at ${checkedInAt}`);
+    res.json({
+      message: 'Successfully registered and checked in',
+      userId: newUserId,
+      username: fullName,
+      checkedInAt
+    });
+  } catch (error) {
+    console.error('Error registering and checking in user:', error);
+    res.status(500).json({ error: 'Failed to register and check in user' });
+  }
+});
+
 module.exports = router;

@@ -21,21 +21,21 @@ export function HomePage() {
   };
 
   return (
-    <div className="min-h-screen py-4">
+    <div className="h-screen overflow-hidden py-2">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-3">
         <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 fade-in">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 fade-in">
             Great Valley High School NHS
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6 fade-in">
+          <p className="text-base text-gray-600 max-w-3xl mx-auto mb-3 fade-in">
             Learn about our mission, the four pillars of NHS, and how to join our chapter.
           </p>
         </div>
       </section>
 
       {/* Mission Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-3">
         <Card className="shadow-lg border-l-4 border-royal-blue">
           <CardHeader>
             <CardTitle className="flex items-center text-royal-blue text-2xl">
@@ -52,7 +52,7 @@ export function HomePage() {
                 <span className="font-semibold text-royal-blue"> Service</span>, and
                 <span className="font-semibold text-royal-blue"> Character</span>.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <BookOpen className="w-8 h-8 text-royal-blue mx-auto mb-2" />
                   <h3 className="font-semibold text-royal-blue">Scholarship</h3>
@@ -80,17 +80,17 @@ export function HomePage() {
       </section>
 
       {/* How to Join NHS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-3">
         <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">How to Join NHS</h2>
-          <p className="text-lg text-gray-600">Understanding the selection process and requirements</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">How to Join NHS</h2>
+          <p className="text-base text-gray-600">Understanding the selection process and requirements</p>
         </div>
 
         {/* Key Principles */}
         <div className="mb-6">
           <Card className="shadow-lg border-l-4 border-royal-blue">
             <CardHeader>
-              <CardTitle className="flex items-center text-royal-blue text-xl">
+              <CardTitle className="flex items-center text-royal-blue text-lg">
                 <Award className="w-5 h-5 mr-2" />
                 NHS Selection Principles
               </CardTitle>
@@ -135,10 +135,10 @@ export function HomePage() {
         </div>
 
         {/* Selection Process and Faculty Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-3">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center text-royal-blue">
+              <CardTitle className="flex items-center text-royal-blue text-lg">
                 <BookOpen className="w-5 h-5 mr-2" />
                 Selection Process Steps
               </CardTitle>
@@ -187,7 +187,7 @@ export function HomePage() {
           {/* Faculty Advisor */}
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center text-royal-blue">
+              <CardTitle className="flex items-center text-royal-blue text-lg">
                 <Users className="w-5 h-5 mr-2" />
                 Faculty Advisor
               </CardTitle>
