@@ -18,7 +18,7 @@ export function Footer() {
               </div>
             </Link>
             <p className="text-gray-300 mb-4 max-w-md">
-              The Grand Valley High School National Honor Society recognizes outstanding
+              The Great Valley High School National Honor Society recognizes outstanding
               students who demonstrate excellence in scholarship, leadership, service,
               and character.
             </p>
@@ -80,7 +80,7 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-gray-400 mb-4 md:mb-0">
-            <p>&copy; 2024 Grand Valley High School National Honor Society. All rights reserved.</p>
+            <p>&copy; 2024 Great Valley High School National Honor Society. All rights reserved.</p>
           </div>
           <div className="flex items-center space-x-6 text-sm text-gray-400">
             <span>Advisor: Dr. Paige Morabito</span>

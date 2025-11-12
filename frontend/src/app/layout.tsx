@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "GVHS National Honor Society",
-  description: "Grand Valley High School National Honor Society - Recognizing Scholarship, Leadership, Service, and Character",
-  keywords: ["NHS", "National Honor Society", "Grand Valley High School", "scholarship", "leadership", "service", "character"],
+  description: "Great Valley High School National Honor Society - Recognizing Scholarship, Leadership, Service, and Character",
+  keywords: ["NHS", "National Honor Society", "Great Valley High School", "scholarship", "leadership", "service", "character"],
 };
 
 export default function RootLayout({
