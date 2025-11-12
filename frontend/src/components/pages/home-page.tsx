@@ -21,21 +21,21 @@ export function HomePage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden py-1">
+    <div className="h-screen overflow-hidden py-0.5">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
+      <section className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 mb-1">
         <div className="text-center">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1 fade-in">
+          <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-0.5 fade-in">
             Great Valley High School NHS
           </h1>
-          <p className="text-sm text-gray-600 max-w-3xl mx-auto mb-2 fade-in">
+          <p className="text-xs text-gray-600 max-w-3xl mx-auto mb-1 fade-in">
             Learn about our mission, the four pillars of NHS, and how to join our chapter.
           </p>
         </div>
       </section>
 
       {/* Mission Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
+      <section className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 mb-1">
         <Card className="shadow-lg border-l-4 border-royal-blue">
           <CardHeader>
             <CardTitle className="flex items-center text-royal-blue text-lg">
@@ -44,34 +44,30 @@ export function HomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <p className="text-base text-gray-700 leading-relaxed">
-                The Great Valley High School chapter of the National Honor Society serves to recognize
-                those students who have demonstrated excellence in the areas of <span className="font-semibold text-royal-blue">Scholarship</span>,
-                <span className="font-semibold text-royal-blue"> Leadership</span>,
-                <span className="font-semibold text-royal-blue"> Service</span>, and
-                <span className="font-semibold text-royal-blue"> Character</span>.
+            <div className="space-y-2">
+              <p className="text-xs text-gray-700 leading-tight">
+                To create enthusiasm for <span className="font-semibold text-royal-blue">Scholarship</span>, stimulate desire to render <span className="font-semibold text-royal-blue">Service</span>, promote worthy <span className="font-semibold text-royal-blue">Leadership</span>, and encourage <span className="font-semibold text-royal-blue">Character</span> development.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mt-1">
-                <div className="text-center p-2 bg-blue-50 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-royal-blue mx-auto mb-1" />
-                  <h3 className="font-semibold text-royal-blue text-sm">Scholarship</h3>
-                  <p className="text-xs text-gray-600">Academic excellence and love of learning</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
+                <div className="text-center p-1.5 bg-blue-50 rounded">
+                  <BookOpen className="w-4 h-4 text-royal-blue mx-auto mb-0.5" />
+                  <h3 className="font-semibold text-royal-blue text-xs">Scholarship</h3>
+                  <p className="text-xs text-gray-600">3.75+ GPA</p>
                 </div>
-                <div className="text-center p-2 bg-blue-50 rounded-lg">
-                  <Users className="w-6 h-6 text-royal-blue mx-auto mb-1" />
-                  <h3 className="font-semibold text-royal-blue text-sm">Leadership</h3>
-                  <p className="text-xs text-gray-600">Inspiring and guiding others</p>
+                <div className="text-center p-1.5 bg-blue-50 rounded">
+                  <Users className="w-4 h-4 text-royal-blue mx-auto mb-0.5" />
+                  <h3 className="font-semibold text-royal-blue text-xs">Leadership</h3>
+                  <p className="text-xs text-gray-600">Guiding others</p>
                 </div>
-                <div className="text-center p-2 bg-blue-50 rounded-lg">
-                  <Heart className="w-6 h-6 text-royal-blue mx-auto mb-1" />
-                  <h3 className="font-semibold text-royal-blue text-sm">Service</h3>
-                  <p className="text-xs text-gray-600">Commitment to community betterment</p>
+                <div className="text-center p-1.5 bg-blue-50 rounded">
+                  <Heart className="w-4 h-4 text-royal-blue mx-auto mb-0.5" />
+                  <h3 className="font-semibold text-royal-blue text-xs">Service</h3>
+                  <p className="text-xs text-gray-600">Community support</p>
                 </div>
-                <div className="text-center p-2 bg-blue-50 rounded-lg">
-                  <Award className="w-6 h-6 text-royal-blue mx-auto mb-1" />
-                  <h3 className="font-semibold text-royal-blue text-sm">Character</h3>
-                  <p className="text-xs text-gray-600">Integrity and ethical behavior</p>
+                <div className="text-center p-1.5 bg-blue-50 rounded">
+                  <Award className="w-4 h-4 text-royal-blue mx-auto mb-0.5" />
+                  <h3 className="font-semibold text-royal-blue text-xs">Character</h3>
+                  <p className="text-xs text-gray-600">Integrity & ethics</p>
                 </div>
               </div>
             </div>

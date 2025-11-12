@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserCheck, UserX, Users } from "lucide-react";
+import { UserCheck, UserX, Users, RefreshCw } from "lucide-react";
 
 export function CheckinPageSimple() {
   const [mode, setMode] = useState<"select" | "existing" | "new">("select"); // select mode, existing user, or new user
@@ -16,6 +16,8 @@ export function CheckinPageSimple() {
   const [currentCount, setCurrentCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [userIdAvailable, setUserIdAvailable] = useState<boolean | null>(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   useEffect(() => {
     fetchCurrentCount();
@@ -41,6 +43,19 @@ export function CheckinPageSimple() {
     return () => clearInterval(interval);
   }, [isCheckedIn]);
 
+  // Debounced user ID availability check for new users
+  useEffect(() => {
+    if (mode === "new" && userId) {
+      const timeoutId = setTimeout(() => {
+        checkUserIdAvailability(userId);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setUserIdAvailable(null);
+    }
+  }, [userId, mode]);
+
   const checkUserStatus = async (id: string) => {
     try {
       const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
@@ -62,6 +77,31 @@ export function CheckinPageSimple() {
       }
     } catch (error) {
       console.error("Error fetching count:", error);
+    }
+  };
+
+  const checkUserIdAvailability = async (id: string) => {
+    if (!id.trim() || id.length < 3) {
+      setUserIdAvailable(null);
+      return;
+    }
+
+    setCheckingAvailability(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        // If the user exists, the ID is taken; if no user found, it's available
+        setUserIdAvailable(!data.isCheckedIn && !data.checkedInAt ? true : false);
+      } else {
+        // If 404 or user not found, the ID is likely available
+        setUserIdAvailable(true);
+      }
+    } catch (error) {
+      console.error("Error checking user ID availability:", error);
+      setUserIdAvailable(null);
+    } finally {
+      setCheckingAvailability(false);
     }
   };
 
@@ -116,8 +156,8 @@ export function CheckinPageSimple() {
   };
 
   const handleNewUserRegistration = async () => {
-    if (!firstName.trim() || !lastName.trim()) {
-      setMessage("Please enter both first and last name.");
+    if (!firstName.trim() || !lastName.trim() || !userId.trim()) {
+      setMessage("Please enter first name, last name, and your chosen user ID.");
       return;
     }
 
@@ -130,7 +170,8 @@ export function CheckinPageSimple() {
         },
         body: JSON.stringify({
           firstName: firstName.trim(),
-          lastName: lastName.trim()
+          lastName: lastName.trim(),
+          customUserId: userId.trim()
         }),
       });
 
@@ -291,28 +332,70 @@ export function CheckinPageSimple() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="John"
-                      className="mt-1"
-                    />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="John"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Doe"
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Doe"
-                      className="mt-1"
-                    />
+                    <Label htmlFor="customUserId">Choose Your User ID</Label>
+                    <div className="relative">
+                      <Input
+                        id="customUserId"
+                        type="text"
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                        placeholder="e.g. 123456"
+                        className={`mt-1 ${
+                          userIdAvailable === true ? 'border-green-500' :
+                          userIdAvailable === false ? 'border-red-500' : ''
+                        }`}
+                      />
+                      {userId && userId.length >= 3 && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          {checkingAvailability ? (
+                            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                          ) : userIdAvailable === true ? (
+                            <div className="flex items-center">
+                              <UserCheck className="w-4 h-4 text-green-500" />
+                            </div>
+                          ) : userIdAvailable === false ? (
+                            <div className="flex items-center">
+                              <UserX className="w-4 h-4 text-red-500" />
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {userIdAvailable === true ? (
+                        <span className="text-green-600">✓ This ID is available</span>
+                      ) : userIdAvailable === false ? (
+                        <span className="text-red-600">✗ This ID is already taken</span>
+                      ) : (
+                        "Choose a unique ID you'll remember for future check-ins"
+                      )}
+                    </p>
                   </div>
                 </div>
 

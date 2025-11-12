@@ -194,10 +194,10 @@ router.post('/verify-and-checkin', (req, res) => {
 // Register new user and check them in
 router.post('/register-and-checkin', (req, res) => {
   try {
-    const { firstName, lastName } = req.body;
+    const { firstName, lastName, customUserId } = req.body;
 
-    if (!firstName || !lastName) {
-      return res.status(400).json({ error: 'First name and last name are required' });
+    if (!firstName || !lastName || !customUserId) {
+      return res.status(400).json({ error: 'First name, last name, and user ID are required' });
     }
 
     const storage = getStorage();
@@ -214,11 +214,12 @@ router.post('/register-and-checkin', (req, res) => {
       });
     }
 
-    // Generate a unique user ID
-    let newUserId;
-    do {
-      newUserId = Math.floor(100000 + Math.random() * 900000).toString();
-    } while (storage.has(newUserId));
+    // Check if the custom user ID is already taken
+    if (storage.has(customUserId)) {
+      return res.status(400).json({
+        message: `User ID "${customUserId}" is already taken. Please choose a different ID.`
+      });
+    }
 
     // Create and check in the new user
     const checkedInAt = new Date();
@@ -228,12 +229,12 @@ router.post('/register-and-checkin', (req, res) => {
       isCheckedIn: true
     };
 
-    storage.set(newUserId, newUser);
+    storage.set(customUserId, newUser);
 
-    console.log(`New user ${fullName} (${newUserId}) registered and checked in at ${checkedInAt}`);
+    console.log(`New user ${fullName} (${customUserId}) registered and checked in at ${checkedInAt}`);
     res.json({
       message: 'Successfully registered and checked in',
-      userId: newUserId,
+      userId: customUserId,
       username: fullName,
       checkedInAt
     });
