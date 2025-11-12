@@ -31,7 +31,7 @@ export function AboutPage() {
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8 fade-in">
             Learn about our mission, the four pillars of NHS, and the dedicated students who make up the
-            Grand Valley High School National Honor Society chapter.
+            Great Valley High School National Honor Society chapter.
           </p>
         </div>
       </section>
@@ -48,7 +48,7 @@ export function AboutPage() {
           <CardContent>
             <div className="space-y-6">
               <p className="text-lg text-gray-700 leading-relaxed">
-                The Grand Valley High School chapter of the National Honor Society serves to recognize
+                The Great Valley High School chapter of the National Honor Society serves to recognize
                 those students who have demonstrated excellence in the areas of <span className="font-semibold text-royal-blue">Scholarship</span>,
                 <span className="font-semibold text-royal-blue"> Leadership</span>,
                 <span className="font-semibold text-royal-blue"> Service</span>, and
@@ -418,7 +418,7 @@ export function AboutPage() {
                 <p className="text-sm text-gray-700">
                   <strong>Questions about the selection process?</strong> Contact your school counselor or
                   reach out to Dr. Morabito at <a href="mailto:pmorabito@gvsd.org" className="text-royal-blue hover:underline">pmorabito@gvsd.org</a>
-                  for more information about NHS at Grand Valley High School.
+                  for more information about NHS at Great Valley High School.
                 </p>
               </div>
             </div>

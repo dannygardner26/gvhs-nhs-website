@@ -21,57 +21,57 @@ export function HomePage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden py-2">
+    <div className="h-screen overflow-hidden py-1">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-3">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
         <div className="text-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 fade-in">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1 fade-in">
             Great Valley High School NHS
           </h1>
-          <p className="text-base text-gray-600 max-w-3xl mx-auto mb-3 fade-in">
+          <p className="text-sm text-gray-600 max-w-3xl mx-auto mb-2 fade-in">
             Learn about our mission, the four pillars of NHS, and how to join our chapter.
           </p>
         </div>
       </section>
 
       {/* Mission Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-3">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
         <Card className="shadow-lg border-l-4 border-royal-blue">
           <CardHeader>
-            <CardTitle className="flex items-center text-royal-blue text-2xl">
-              <Target className="w-6 h-6 mr-3" />
+            <CardTitle className="flex items-center text-royal-blue text-lg">
+              <Target className="w-5 h-5 mr-2" />
               Our Chapter Mission
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <p className="text-lg text-gray-700 leading-relaxed">
+            <div className="space-y-3">
+              <p className="text-base text-gray-700 leading-relaxed">
                 The Great Valley High School chapter of the National Honor Society serves to recognize
                 those students who have demonstrated excellence in the areas of <span className="font-semibold text-royal-blue">Scholarship</span>,
                 <span className="font-semibold text-royal-blue"> Leadership</span>,
                 <span className="font-semibold text-royal-blue"> Service</span>, and
                 <span className="font-semibold text-royal-blue"> Character</span>.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <BookOpen className="w-8 h-8 text-royal-blue mx-auto mb-2" />
-                  <h3 className="font-semibold text-royal-blue">Scholarship</h3>
-                  <p className="text-sm text-gray-600">Academic excellence and love of learning</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mt-1">
+                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-royal-blue mx-auto mb-1" />
+                  <h3 className="font-semibold text-royal-blue text-sm">Scholarship</h3>
+                  <p className="text-xs text-gray-600">Academic excellence and love of learning</p>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Users className="w-8 h-8 text-royal-blue mx-auto mb-2" />
-                  <h3 className="font-semibold text-royal-blue">Leadership</h3>
-                  <p className="text-sm text-gray-600">Inspiring and guiding others</p>
+                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                  <Users className="w-6 h-6 text-royal-blue mx-auto mb-1" />
+                  <h3 className="font-semibold text-royal-blue text-sm">Leadership</h3>
+                  <p className="text-xs text-gray-600">Inspiring and guiding others</p>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Heart className="w-8 h-8 text-royal-blue mx-auto mb-2" />
-                  <h3 className="font-semibold text-royal-blue">Service</h3>
-                  <p className="text-sm text-gray-600">Commitment to community betterment</p>
+                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                  <Heart className="w-6 h-6 text-royal-blue mx-auto mb-1" />
+                  <h3 className="font-semibold text-royal-blue text-sm">Service</h3>
+                  <p className="text-xs text-gray-600">Commitment to community betterment</p>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Award className="w-8 h-8 text-royal-blue mx-auto mb-2" />
-                  <h3 className="font-semibold text-royal-blue">Character</h3>
-                  <p className="text-sm text-gray-600">Integrity and ethical behavior</p>
+                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                  <Award className="w-6 h-6 text-royal-blue mx-auto mb-1" />
+                  <h3 className="font-semibold text-royal-blue text-sm">Character</h3>
+                  <p className="text-xs text-gray-600">Integrity and ethical behavior</p>
                 </div>
               </div>
             </div>
@@ -80,14 +80,14 @@ export function HomePage() {
       </section>
 
       {/* How to Join NHS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-3">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">How to Join NHS</h2>
-          <p className="text-base text-gray-600">Understanding the selection process and requirements</p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-1">
+        <div className="text-center mb-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">How to Join NHS</h2>
+          <p className="text-sm text-gray-600">Understanding the selection process and requirements</p>
         </div>
 
         {/* Key Principles */}
-        <div className="mb-6">
+        <div className="mb-2">
           <Card className="shadow-lg border-l-4 border-royal-blue">
             <CardHeader>
               <CardTitle className="flex items-center text-royal-blue text-lg">
