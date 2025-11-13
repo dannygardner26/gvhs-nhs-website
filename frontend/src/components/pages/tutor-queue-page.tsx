@@ -59,7 +59,7 @@ export function TutorQueuePage() {
             marginBottom: '1rem',
             fontWeight: 'bold'
           }}>
-            📚 Library Status
+            Library Status
           </h1>
 
           {/* Current Count */}
@@ -90,7 +90,7 @@ export function TutorQueuePage() {
                 fontSize: '1rem'
               }}
             >
-              {loading ? '🔄 Refreshing...' : '🔄 Refresh'}
+              {loading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
 

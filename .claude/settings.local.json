@@ -13,7 +13,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(taskkill:*)",
-      "Read(//c/Users/danny/Downloads/**)"
+      "Read(//c/Users/danny/Downloads/**)",
+      "Bash(npm run:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
