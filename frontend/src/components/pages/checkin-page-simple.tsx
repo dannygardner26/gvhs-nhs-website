@@ -56,17 +56,6 @@ export function CheckinPageSimple() {
     }
   }, [userId, mode]);
 
-  const checkUserStatus = async (id: string) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setIsCheckedIn(data.isCheckedIn);
-      }
-    } catch (error) {
-      console.error("Error checking user status:", error);
-    }
-  };
 
   const fetchCurrentCount = async () => {
     try {
@@ -149,7 +138,7 @@ export function CheckinPageSimple() {
       } else {
         setMessage(data.message || "User ID not found. Please check your ID or register as a new user.");
       }
-    } catch (error) {
+    } catch {
       setMessage("Error connecting to server");
     }
     setLoading(false);
@@ -185,38 +174,12 @@ export function CheckinPageSimple() {
       } else {
         setMessage(data.message || "Error creating user. Please try again.");
       }
-    } catch (error) {
+    } catch {
       setMessage("Error connecting to server");
     }
     setLoading(false);
   };
 
-  const handleCheckin = async () => {
-    if (!userId || !username) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch("http://localhost:3001/api/checkin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId, username }),
-      });
-
-      if (response.ok) {
-        setIsCheckedIn(true);
-        setMessage("Successfully checked in!");
-        fetchCurrentCount();
-      } else {
-        const data = await response.json();
-        setMessage(data.message || "Error checking in");
-      }
-    } catch (error) {
-      setMessage("Error connecting to server");
-    }
-    setLoading(false);
-  };
 
   const handleCheckout = async () => {
     if (!userId) return;
@@ -239,7 +202,7 @@ export function CheckinPageSimple() {
         const data = await response.json();
         setMessage(data.message || "Error checking out");
       }
-    } catch (error) {
+    } catch {
       setMessage("Error connecting to server");
     }
     setLoading(false);
@@ -280,7 +243,7 @@ export function CheckinPageSimple() {
                   variant="outline"
                   className="w-full"
                 >
-                  I'm a new user (create User ID)
+                  I&apos;m a new user (create User ID)
                 </Button>
               </div>
             ) : mode === "existing" ? (

@@ -119,7 +119,7 @@ export function HomePage() {
           <Card className="bg-royal-blue text-white text-center">
             <CardContent className="py-4 px-6">
               <p className="text-sm font-medium">
-                "Membership in NHS is an honor and privilege - we uphold Service, Leadership, Scholarship, and Character"
+                &quot;Membership in NHS is an honor and privilege - we uphold Service, Leadership, Scholarship, and Character&quot;
               </p>
             </CardContent>
           </Card>
