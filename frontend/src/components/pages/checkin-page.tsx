@@ -99,7 +99,13 @@ export function CheckinPage() {
       const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
       if (response.ok) {
         const data = await response.json();
+        console.log("Status check response:", data);
         setIsCheckedIn(data.isCheckedIn);
+        if (data.isCheckedIn) {
+          setMessage("You are currently checked in.");
+        }
+      } else {
+        console.error("Status check failed:", response.status);
       }
     } catch (error) {
       console.error("Error checking user status:", error);
@@ -212,6 +218,14 @@ export function CheckinPage() {
                   <p className="text-gray-600">Welcome, {username}!</p>
                   <p className="text-sm text-gray-500">Your ID: {userId}</p>
                 </div>
+
+                {/* Status Badge */}
+                {isCheckedIn && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <p className="text-green-700 font-medium">✓ You are currently checked in</p>
+                    <p className="text-sm text-green-600 mt-1">Click below to check out when you leave</p>
+                  </div>
+                )}
 
                 {!isCheckedIn ? (
                   <Button

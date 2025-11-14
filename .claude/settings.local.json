@@ -15,7 +15,9 @@
       "Bash(taskkill:*)",
       "Read(//c/Users/danny/Downloads/**)",
       "Bash(npm run:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git checkout:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
