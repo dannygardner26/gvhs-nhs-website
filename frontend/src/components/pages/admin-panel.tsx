@@ -1,0 +1,418 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp } from "lucide-react";
+
+interface User {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  isCheckedIn: boolean;
+  checkedInAt: string | null;
+  createdAt: string;
+}
+
+interface Session {
+  userId: string;
+  username: string;
+  checkedInAt: string;
+  checkedOutAt: string;
+  duration: number;
+  forcedByAdmin?: boolean;
+}
+
+interface TotalHours {
+  userId: string;
+  totalSessions: number;
+  totalMilliseconds: number;
+  totalHours: string;
+}
+
+export function AdminPanel() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [userSessions, setUserSessions] = useState<Record<string, Session[]>>({});
+  const [userHours, setUserHours] = useState<Record<string, TotalHours>>({});
+
+  const [changingPinUserId, setChangingPinUserId] = useState<string | null>(null);
+  const [newUserId, setNewUserId] = useState("");
+
+  const handleAuth = () => {
+    if (password === "NHSadmin") {
+      setIsAuthenticated(true);
+      setAuthError("");
+      fetchUsers();
+    } else {
+      setAuthError("Incorrect password");
+    }
+  };
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:3001/api/checkin/admin/users");
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        setMessage("Failed to fetch users");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setMessage("Error connecting to server");
+    }
+    setLoading(false);
+  };
+
+  const fetchUserSessions = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/checkin/admin/session-history/${userId}`);
+      if (response.ok) {
+        const sessions = await response.json();
+        setUserSessions(prev => ({ ...prev, [userId]: sessions }));
+      }
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
+  const fetchUserHours = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/checkin/admin/total-hours/${userId}`);
+      if (response.ok) {
+        const hours = await response.json();
+        setUserHours(prev => ({ ...prev, [userId]: hours }));
+      }
+    } catch (error) {
+      console.error("Error fetching hours:", error);
+    }
+  };
+
+  const toggleUserExpand = async (userId: string) => {
+    if (expandedUserId === userId) {
+      setExpandedUserId(null);
+    } else {
+      setExpandedUserId(userId);
+      if (!userSessions[userId]) {
+        await fetchUserSessions(userId);
+      }
+      if (!userHours[userId]) {
+        await fetchUserHours(userId);
+      }
+    }
+  };
+
+  const handleForceCheckout = async (userId: string, username: string) => {
+    if (!confirm(`Force checkout ${username}?`)) return;
+
+    try {
+      const response = await fetch("http://localhost:3001/api/checkin/admin/force-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        setMessage(`Successfully checked out ${username}`);
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        setMessage(data.error || "Failed to checkout user");
+      }
+    } catch (error) {
+      console.error("Error checking out user:", error);
+      setMessage("Error connecting to server");
+    }
+  };
+
+  const handleChangePin = async (oldUserId: string, username: string) => {
+    if (!newUserId.trim()) {
+      setMessage("Please enter a new User ID");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:3001/api/checkin/admin/change-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: oldUserId, newUserId: newUserId.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(`Successfully changed User ID for ${username}`);
+        setChangingPinUserId(null);
+        setNewUserId("");
+        fetchUsers();
+      } else {
+        setMessage(data.error || "Failed to change User ID");
+      }
+    } catch (error) {
+      console.error("Error changing PIN:", error);
+      setMessage("Error connecting to server");
+    }
+  };
+
+  const formatDuration = (milliseconds: number) => {
+    const totalMinutes = Math.floor(milliseconds / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="h-screen overflow-hidden flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full mx-4">
+          <Card className="shadow-lg">
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center text-royal-blue text-2xl">
+                <Shield className="w-6 h-6 mr-2" />
+                Admin Panel
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="password">Enter Admin Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+                  placeholder="Password"
+                  className="mt-1"
+                />
+              </div>
+
+              <Button onClick={handleAuth} className="w-full bg-blue-600 hover:bg-blue-700">
+                Login
+              </Button>
+
+              {authError && (
+                <div className="p-3 rounded-lg text-center bg-red-50 text-red-700">
+                  {authError}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-royal-blue flex items-center">
+            <Shield className="w-8 h-8 mr-2" />
+            NHS Admin Panel
+          </h1>
+          <Button onClick={() => setIsAuthenticated(false)} variant="outline">
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+
+        {message && (
+          <div className={`mb-4 p-3 rounded-lg ${
+            message.includes("Error") || message.includes("Failed")
+              ? "bg-red-50 text-red-700"
+              : "bg-green-50 text-green-700"
+          }`}>
+            {message}
+          </div>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              All Users ({users.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Loading users...</div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No users registered yet</div>
+            ) : (
+              <div className="space-y-2">
+                {users.map((user) => (
+                  <div key={user.userId} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-lg">{user.username}</h3>
+                          {user.isCheckedIn && (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                              Currently in library
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">First:</span> {user.firstName} | <span className="font-medium">Last:</span> {user.lastName}
+                        </div>
+                        {user.isCheckedIn && user.checkedInAt && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Checked in: {formatDateTime(user.checkedInAt)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        {user.isCheckedIn && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleForceCheckout(user.userId, user.username)}
+                          >
+                            Force Checkout
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setChangingPinUserId(changingPinUserId === user.userId ? null : user.userId);
+                            setNewUserId("");
+                          }}
+                        >
+                          <Key className="w-4 h-4 mr-1" />
+                          Change PIN
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleUserExpand(user.userId)}
+                        >
+                          <Clock className="w-4 h-4 mr-1" />
+                          Hours
+                          {expandedUserId === user.userId ? (
+                            <ChevronUp className="w-4 h-4 ml-1" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 ml-1" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Change PIN Form */}
+                    {changingPinUserId === user.userId && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                        <Label htmlFor={`newPin-${user.userId}`} className="text-sm">New User ID (PIN)</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            id={`newPin-${user.userId}`}
+                            type="text"
+                            value={newUserId}
+                            onChange={(e) => setNewUserId(e.target.value)}
+                            placeholder="Enter new User ID"
+                            className="flex-1"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleChangePin(user.userId, user.username)}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setChangingPinUserId(null);
+                              setNewUserId("");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2">
+                          Note: User ID acts as the PIN for check-in authentication
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Volunteer Hours & Session History */}
+                    {expandedUserId === user.userId && (
+                      <div className="mt-4 p-3 bg-gray-50 rounded">
+                        {userHours[user.userId] && (
+                          <div className="mb-3">
+                            <h4 className="font-semibold text-sm mb-2">Total Volunteer Time</h4>
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-600">Total Hours:</span>
+                                <div className="font-bold text-lg text-blue-600">
+                                  {userHours[user.userId].totalHours}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Total Sessions:</span>
+                                <div className="font-bold text-lg">
+                                  {userHours[user.userId].totalSessions}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {userSessions[user.userId] && (
+                          <div>
+                            <h4 className="font-semibold text-sm mb-2">Session History</h4>
+                            {userSessions[user.userId].length === 0 ? (
+                              <p className="text-sm text-gray-500">No completed sessions yet</p>
+                            ) : (
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {userSessions[user.userId].map((session, idx) => (
+                                  <div key={idx} className="text-xs p-2 bg-white rounded border">
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">
+                                        {formatDateTime(session.checkedInAt)}
+                                      </span>
+                                      <span className="text-blue-600 font-semibold">
+                                        {formatDuration(session.duration)}
+                                      </span>
+                                    </div>
+                                    <div className="text-gray-500 mt-1">
+                                      Out: {formatDateTime(session.checkedOutAt)}
+                                      {session.forcedByAdmin && (
+                                        <span className="ml-2 text-orange-600">(Admin forced)</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

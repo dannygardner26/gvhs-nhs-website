@@ -28,7 +28,7 @@ export function CheckinPageSimple() {
       const currentTime = now.getHours() * 100 + now.getMinutes();
 
       // Period change times (converted to HHMM format)
-      const logoutTimes = [839, 931, 1025, 1115, 1245, 1337, 1430]; // 8:39 AM, 9:31 AM, etc.
+      const logoutTimes = [756, 847, 938, 1029, 1116, 1146, 1216, 1250, 1341]; // 7:56 AM, 8:47 AM, 9:38 AM, 10:29 AM, 11:16 AM, 11:46 AM, 12:16 PM, 12:50 PM, 1:41 PM
 
       const shouldLogout = logoutTimes.some(time => {
         // Check if current time is within 1 minute of logout time
@@ -395,6 +395,7 @@ export function CheckinPageSimple() {
                     setMode("select");
                     setFirstName("");
                     setLastName("");
+                    setUserId("");
                     setMessage("");
                   }}
                   className="w-full"
