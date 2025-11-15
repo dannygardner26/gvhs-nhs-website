@@ -17,7 +17,8 @@
       "Bash(npm run:*)",
       "Bash(rm:*)",
       "Bash(git checkout:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
