@@ -21,7 +21,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Simple checkin routes
-app.use('/api/checkin', require('./routes/checkin-simple'));
+try {
+  app.use('/api/checkin', require('./routes/checkin-simple'));
+  console.log('Checkin routes loaded successfully');
+} catch (error) {
+  console.error('Error loading checkin routes:', error);
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

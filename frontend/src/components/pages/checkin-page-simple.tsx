@@ -20,6 +20,14 @@ export function CheckinPageSimple() {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   useEffect(() => {
+    // Check if user is remembered in localStorage
+    const savedUserId = localStorage.getItem("checkin_userId");
+    if (savedUserId) {
+      setUserId(savedUserId);
+      setMode("existing");
+      checkUserStatus(savedUserId);
+    }
+
     fetchCurrentCount();
 
     // Auto logout at specific times (period changes)
@@ -28,7 +36,7 @@ export function CheckinPageSimple() {
       const currentTime = now.getHours() * 100 + now.getMinutes();
 
       // Period change times (converted to HHMM format)
-      const logoutTimes = [839, 931, 1025, 1115, 1245, 1337, 1430]; // 8:39 AM, 9:31 AM, etc.
+      const logoutTimes = [756, 847, 938, 1029, 1116, 1146, 1216, 1250, 1341]; // 7:56 AM, 8:47 AM, 9:38 AM, 10:29 AM, 11:16 AM, 11:46 AM, 12:16 PM, 12:50 PM, 1:41 PM
 
       const shouldLogout = logoutTimes.some(time => {
         // Check if current time is within 1 minute of logout time
@@ -56,6 +64,21 @@ export function CheckinPageSimple() {
     }
   }, [userId, mode]);
 
+
+  const checkUserStatus = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsCheckedIn(data.isCheckedIn);
+        if (data.isCheckedIn) {
+          setMessage("You are currently checked in.");
+        }
+      }
+    } catch (error) {
+      console.error("Error checking user status:", error);
+    }
+  };
 
   const fetchCurrentCount = async () => {
     try {
@@ -133,8 +156,14 @@ export function CheckinPageSimple() {
 
       if (response.ok) {
         setIsCheckedIn(true);
+        localStorage.setItem("checkin_userId", userId);
         setMessage(`Successfully checked in! Welcome back, ${data.username}.`);
         fetchCurrentCount();
+      } else if (data.message && data.message.includes("already checked in")) {
+        // User is already checked in, update state to reflect this
+        setIsCheckedIn(true);
+        localStorage.setItem("checkin_userId", userId);
+        setMessage("You are already checked in. Use the button below to check out when you leave.");
       } else {
         setMessage(data.message || "User ID not found. Please check your ID or register as a new user.");
       }
@@ -169,7 +198,8 @@ export function CheckinPageSimple() {
       if (response.ok) {
         setUserId(data.userId);
         setIsCheckedIn(true);
-        setMessage(`Registration successful! Your User ID is ${data.userId}. Please save this for future use.`);
+        localStorage.setItem("checkin_userId", data.userId);
+        setMessage(`Registration successful! Your User ID is ${data.userId}. We'll remember you for next time!`);
         fetchCurrentCount();
       } else {
         setMessage(data.message || "Error creating user. Please try again.");
@@ -260,6 +290,14 @@ export function CheckinPageSimple() {
                   />
                 </div>
 
+                {/* Status Badge */}
+                {isCheckedIn && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <p className="text-green-700 font-medium">✓ You are currently checked in</p>
+                    <p className="text-sm text-green-600 mt-1">Click below to check out when you leave</p>
+                  </div>
+                )}
+
                 {!isCheckedIn ? (
                   <Button
                     onClick={handleExistingUserCheckin}
@@ -281,17 +319,33 @@ export function CheckinPageSimple() {
                   </Button>
                 )}
 
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setMode("select");
-                    setUserId("");
-                    setMessage("");
-                  }}
-                  className="w-full"
-                >
-                  Back
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setMode("select");
+                      setUserId("");
+                      setMessage("");
+                      setIsCheckedIn(false);
+                    }}
+                    className="w-full"
+                  >
+                    Back
+                  </Button>
+                  {localStorage.getItem("checkin_userId") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        localStorage.removeItem("checkin_userId");
+                        setMessage("Your device will no longer remember you.");
+                      }}
+                      className="w-full text-xs text-gray-500"
+                    >
+                      Forget Me on This Device
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -395,6 +449,7 @@ export function CheckinPageSimple() {
                     setMode("select");
                     setFirstName("");
                     setLastName("");
+                    setUserId("");
                     setMessage("");
                   }}
                   className="w-full"
