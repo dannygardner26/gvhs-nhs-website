@@ -20,7 +20,7 @@ export function TutoringPage() {
 
   const fetchCurrentCount = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/count");
+      const response = await fetch("/api/checkin/count");
       if (response.ok) {
         const data = await response.json();
         setCurrentCount(data.count);

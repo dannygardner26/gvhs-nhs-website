@@ -17,8 +17,8 @@ export function TutorQueuePage() {
     setLoading(true);
     try {
       const [countResponse, usersResponse] = await Promise.all([
-        fetch("http://localhost:3001/api/checkin/count"),
-        fetch("http://localhost:3001/api/checkin/active")
+        fetch("/api/checkin/count"),
+        fetch("/api/checkin/active")
       ]);
 
       if (countResponse.ok) {
@@ -44,7 +44,7 @@ export function TutorQueuePage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', padding: '2rem', backgroundColor: '#f8fafc' }}>
+    <div style={{ minHeight: 'calc(100vh - 4rem)', padding: '2rem', backgroundColor: '#f8fafc' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <div style={{
           backgroundColor: 'white',

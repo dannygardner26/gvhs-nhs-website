@@ -18,7 +18,9 @@
       "Bash(rm:*)",
       "Bash(git checkout:*)",
       "Bash(node:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(supabase:*)",
+      "Bash(winget install:*)"
     ],
     "deny": [],
     "ask": []

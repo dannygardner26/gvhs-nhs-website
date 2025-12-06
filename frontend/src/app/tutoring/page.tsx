@@ -1,5 +1,5 @@
-import { TutoringPageSimple } from "@/components/pages/tutoring-page-simple";
+import { redirect } from 'next/navigation'
 
 export default function Tutoring() {
-  return <TutoringPageSimple />;
+  redirect('/tutor/register')
 }

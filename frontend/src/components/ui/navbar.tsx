@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "./button";
 import { Menu, X, GraduationCap } from "lucide-react";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   const navigation = [
-    { name: "Home", href: "/" },
-    { name: "Tutoring", href: "/tutoring" },
+    { name: "/", href: "/" },
+    { name: "/checkin", href: "/checkin" },
+    { name: "/volunteering", href: "/volunteering" },
+    { name: "/tutor/register", href: "/tutor/register" },
+    { name: "/tutor/status", href: "/tutor/status" },
+    { name: "/tutor/checkin", href: "/tutor/checkin" },
+    { name: "/tutor/profile", href: "/tutor/profile" },
+    { name: "/admin", href: "/admin" },
   ];
 
   return (
@@ -37,10 +45,18 @@ export function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 hover:text-royal-blue px-3 py-2 text-sm font-medium transition-colors duration-200 relative group"
+                className={`px-3 py-2 text-sm font-medium transition-colors duration-200 relative group ${
+                  pathname === item.href
+                    ? "text-royal-blue"
+                    : "text-gray-700 hover:text-royal-blue"
+                }`}
               >
                 {item.name}
-                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-royal-blue transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+                <span className={`absolute inset-x-0 bottom-0 h-0.5 bg-royal-blue transition-transform duration-200 ${
+                  pathname === item.href
+                    ? "transform scale-x-100"
+                    : "transform scale-x-0 group-hover:scale-x-100"
+                }`} />
               </Link>
             ))}
 
@@ -74,7 +90,11 @@ export function Navbar() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-royal-blue hover:bg-blue-50 rounded-md transition-colors duration-200"
+                  className={`block px-3 py-2 text-base font-medium rounded-md transition-colors duration-200 ${
+                    pathname === item.href
+                      ? "text-royal-blue bg-blue-50 border-l-4 border-royal-blue"
+                      : "text-gray-700 hover:text-royal-blue hover:bg-blue-50"
+                  }`}
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}

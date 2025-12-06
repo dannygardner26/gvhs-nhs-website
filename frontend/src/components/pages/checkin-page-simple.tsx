@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserCheck, UserX, Users, RefreshCw } from "lucide-react";
+import { CodeInput } from "@/components/ui/code-input";
 
 export function CheckinPageSimple() {
   const [mode, setMode] = useState<"select" | "existing" | "new">("select"); // select mode, existing user, or new user
@@ -67,7 +68,7 @@ export function CheckinPageSimple() {
 
   const checkUserStatus = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
+      const response = await fetch(`/api/checkin/status/${id}`);
       if (response.ok) {
         const data = await response.json();
         setIsCheckedIn(data.isCheckedIn);
@@ -82,7 +83,7 @@ export function CheckinPageSimple() {
 
   const fetchCurrentCount = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/count");
+      const response = await fetch("/api/checkin/count");
       if (response.ok) {
         const data = await response.json();
         setCurrentCount(data.count);
@@ -93,14 +94,14 @@ export function CheckinPageSimple() {
   };
 
   const checkUserIdAvailability = async (id: string) => {
-    if (!id.trim() || id.length < 3) {
+    if (!id.trim() || id.length !== 6 || !/^\d{6}$/.test(id)) {
       setUserIdAvailable(null);
       return;
     }
 
     setCheckingAvailability(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
+      const response = await fetch(`/api/checkin/status/${id}`);
       if (response.ok) {
         const data = await response.json();
         // If the user exists, the ID is taken; if no user found, it's available
@@ -120,7 +121,7 @@ export function CheckinPageSimple() {
   const handleAutoLogout = async () => {
     if (userId) {
       try {
-        await fetch("http://localhost:3001/api/checkin/checkout", {
+        await fetch("/api/checkin/checkout", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -142,9 +143,14 @@ export function CheckinPageSimple() {
       return;
     }
 
+    if (!/^\d{6}$/.test(userId)) {
+      setMessage("User ID must be exactly 6 digits.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/checkin/verify-and-checkin`, {
+      const response = await fetch(`/api/checkin/verify-and-checkin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,9 +185,14 @@ export function CheckinPageSimple() {
       return;
     }
 
+    if (!/^\d{6}$/.test(userId)) {
+      setMessage("User ID must be exactly 6 digits.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/register-and-checkin", {
+      const response = await fetch("/api/checkin/register-and-checkin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -216,7 +227,7 @@ export function CheckinPageSimple() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/checkout", {
+      const response = await fetch("/api/checkin/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -239,7 +250,7 @@ export function CheckinPageSimple() {
   };
 
   return (
-    <div className="h-screen overflow-hidden flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
       <div className="max-w-md w-full mx-4">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
@@ -279,15 +290,15 @@ export function CheckinPageSimple() {
             ) : mode === "existing" ? (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="userId">Enter your User ID</Label>
-                  <Input
-                    id="userId"
-                    type="text"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    placeholder="e.g. 123456"
-                    className="mt-1"
-                  />
+                  <Label htmlFor="userId">Enter your 6-digit User ID</Label>
+                  <div className="mt-2 flex justify-center">
+                    <CodeInput
+                      value={userId}
+                      onChange={setUserId}
+                      length={6}
+                      autoFocus={true}
+                    />
+                  </div>
                 </div>
 
                 {/* Status Badge */}
@@ -375,31 +386,27 @@ export function CheckinPageSimple() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="customUserId">Choose Your User ID</Label>
-                    <div className="relative">
-                      <Input
-                        id="customUserId"
-                        type="text"
+                    <Label htmlFor="customUserId">Choose Your 6-digit User ID</Label>
+                    <div className="mt-2 flex justify-center">
+                      <CodeInput
                         value={userId}
-                        onChange={(e) => setUserId(e.target.value)}
-                        placeholder="e.g. 123456"
-                        className={`mt-1 ${
-                          userIdAvailable === true ? 'border-green-500' :
-                          userIdAvailable === false ? 'border-red-500' : ''
-                        }`}
+                        onChange={setUserId}
+                        length={6}
+                        className={
+                          userIdAvailable === true ? '[&>input]:border-green-500 [&>input]:bg-green-50' :
+                          userIdAvailable === false ? '[&>input]:border-red-500 [&>input]:bg-red-50' : ''
+                        }
                       />
-                      {userId && userId.length >= 3 && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    </div>
+                    <div className="flex justify-center mt-2">
+                      {userId && userId.length > 0 && (
+                        <div className="flex items-center">
                           {checkingAvailability ? (
-                            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin mr-2" />
                           ) : userIdAvailable === true ? (
-                            <div className="flex items-center">
-                              <UserCheck className="w-4 h-4 text-green-500" />
-                            </div>
+                            <UserCheck className="w-4 h-4 text-green-500 mr-2" />
                           ) : userIdAvailable === false ? (
-                            <div className="flex items-center">
-                              <UserX className="w-4 h-4 text-red-500" />
-                            </div>
+                            <UserX className="w-4 h-4 text-red-500 mr-2" />
                           ) : null}
                         </div>
                       )}
@@ -409,8 +416,14 @@ export function CheckinPageSimple() {
                         <span className="text-green-600">✓ This ID is available</span>
                       ) : userIdAvailable === false ? (
                         <span className="text-red-600">✗ This ID is already taken</span>
+                      ) : userId.length === 0 ? (
+                        "Enter exactly 6 digits for your unique ID"
+                      ) : userId.length < 6 ? (
+                        <span className="text-gray-500">Enter {6 - userId.length} more digit{6 - userId.length !== 1 ? 's' : ''}</span>
+                      ) : !/^\d{6}$/.test(userId) ? (
+                        <span className="text-red-600">ID must contain only numbers</span>
                       ) : (
-                        "Choose a unique ID you'll remember for future check-ins"
+                        "Choose a unique 6-digit ID you'll remember for future check-ins"
                       )}
                     </p>
                   </div>

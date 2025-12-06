@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp } from "lucide-react";
+import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
+import { CodeInput } from "@/components/ui/code-input";
 
 interface User {
   userId: string;
@@ -35,8 +36,9 @@ interface TotalHours {
 
 export function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
+  const [nhsUserId, setNhsUserId] = useState("");
   const [authError, setAuthError] = useState("");
+  const [opportunitySuggestions, setOpportunitySuggestions] = useState([]);
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,19 +52,22 @@ export function AdminPanel() {
   const [newUserId, setNewUserId] = useState("");
 
   const handleAuth = () => {
-    if (password === "NHSadmin") {
-      setIsAuthenticated(true);
-      setAuthError("");
-      fetchUsers();
-    } else {
-      setAuthError("Incorrect password");
+    if (!/^\d{6}$/.test(nhsUserId)) {
+      setAuthError("NHS User ID must be exactly 6 digits");
+      return;
     }
+
+    // For now, any valid 6-digit ID works for admin access
+    setIsAuthenticated(true);
+    setAuthError("");
+    fetchUsers();
+    fetchOpportunitySuggestions();
   };
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/admin/users");
+      const response = await fetch("/api/checkin/admin/users");
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
@@ -76,9 +81,23 @@ export function AdminPanel() {
     setLoading(false);
   };
 
+  const fetchOpportunitySuggestions = async () => {
+    try {
+      const response = await fetch("/api/opportunity-suggestions");
+      if (response.ok) {
+        const data = await response.json();
+        setOpportunitySuggestions(data.suggestions);
+      } else {
+        console.error("Failed to fetch opportunity suggestions");
+      }
+    } catch (error) {
+      console.error("Error fetching opportunity suggestions:", error);
+    }
+  };
+
   const fetchUserSessions = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/checkin/admin/session-history/${userId}`);
+      const response = await fetch(`/api/checkin/admin/session-history/${userId}`);
       if (response.ok) {
         const sessions = await response.json();
         setUserSessions(prev => ({ ...prev, [userId]: sessions }));
@@ -90,7 +109,7 @@ export function AdminPanel() {
 
   const fetchUserHours = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/checkin/admin/total-hours/${userId}`);
+      const response = await fetch(`/api/checkin/admin/total-hours/${userId}`);
       if (response.ok) {
         const hours = await response.json();
         setUserHours(prev => ({ ...prev, [userId]: hours }));
@@ -118,7 +137,7 @@ export function AdminPanel() {
     if (!confirm(`Force checkout ${username}?`)) return;
 
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/admin/force-checkout", {
+      const response = await fetch("/api/checkin/admin/force-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
@@ -144,7 +163,7 @@ export function AdminPanel() {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/admin/change-pin", {
+      const response = await fetch("/api/checkin/admin/change-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: oldUserId, newUserId: newUserId.trim() }),
@@ -191,20 +210,22 @@ export function AdminPanel() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="password">Enter Admin Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-                  placeholder="Password"
-                  className="mt-1"
-                />
+                <Label htmlFor="nhsUserId">Enter Your NHS User ID</Label>
+                <div className="mt-2 flex justify-center">
+                  <CodeInput
+                    value={nhsUserId}
+                    onChange={setNhsUserId}
+                    length={6}
+                    autoFocus={true}
+                  />
+                </div>
+                <p className="text-xs text-gray-600 mt-2 text-center">
+                  Enter your 6-digit NHS User ID to access admin features
+                </p>
               </div>
 
               <Button onClick={handleAuth} className="w-full bg-blue-600 hover:bg-blue-700">
-                Login
+                Access Admin Panel
               </Button>
 
               {authError && (
@@ -242,6 +263,77 @@ export function AdminPanel() {
             {message}
           </div>
         )}
+
+        {/* Opportunity Suggestions */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Lightbulb className="w-5 h-5 mr-2" />
+              Volunteer Opportunity Suggestions ({opportunitySuggestions.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {opportunitySuggestions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No suggestions submitted yet</div>
+            ) : (
+              <div className="space-y-4">
+                {opportunitySuggestions.map((suggestion: any) => (
+                  <div key={suggestion.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg">{suggestion.opportunity_title}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        suggestion.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        suggestion.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {suggestion.status}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 mb-3">{suggestion.description}</p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Submitted by:</span> {suggestion.nhs_user_id}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Submitted:</span> {formatDateTime(suggestion.created_at)}
+                      </div>
+                      {suggestion.organization_name && (
+                        <div>
+                          <span className="font-medium text-gray-700">Organization:</span> {suggestion.organization_name}
+                        </div>
+                      )}
+                      {suggestion.estimated_hours && (
+                        <div>
+                          <span className="font-medium text-gray-700">Estimated Hours:</span> {suggestion.estimated_hours}
+                        </div>
+                      )}
+                      {suggestion.contact_info && (
+                        <div>
+                          <span className="font-medium text-gray-700">Contact:</span> {suggestion.contact_info}
+                        </div>
+                      )}
+                      {suggestion.preferred_location && (
+                        <div>
+                          <span className="font-medium text-gray-700">Location:</span> {suggestion.preferred_location}
+                        </div>
+                      )}
+                    </div>
+                    {suggestion.status === 'pending' && (
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          Approve
+                        </Button>
+                        <Button size="sm" variant="destructive">
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

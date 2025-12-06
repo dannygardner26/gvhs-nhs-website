@@ -1,0 +1,35 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
+
+// GET /api/checkin/admin/session-history/[userId] - Get session history for a specific user
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    const { userId } = params
+
+    const { data: sessions, error } = await supabase
+      .from('session_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('checked_in_at', { ascending: false })
+
+    if (error) {
+      console.error('Error getting session history:', error)
+      return NextResponse.json(
+        { error: 'Failed to get session history' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(sessions || [])
+
+  } catch (error) {
+    console.error('Error in session history API:', error)
+    return NextResponse.json(
+      { error: 'Failed to get session history' },
+      { status: 500 }
+    )
+  }
+}

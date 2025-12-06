@@ -57,7 +57,7 @@ export function CheckinPage() {
   const handleAutoLogout = async () => {
     if (userId) {
       try {
-        await fetch("http://localhost:3001/api/checkin/checkout", {
+        await fetch("/api/checkin/checkout", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -96,7 +96,7 @@ export function CheckinPage() {
 
   const checkUserStatus = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/checkin/status/${id}`);
+      const response = await fetch(`/api/checkin/status/${id}`);
       if (response.ok) {
         const data = await response.json();
         console.log("Status check response:", data);
@@ -114,7 +114,7 @@ export function CheckinPage() {
 
   const fetchCurrentCount = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/count");
+      const response = await fetch("/api/checkin/count");
       if (response.ok) {
         const data = await response.json();
         setCurrentCount(data.count);
@@ -129,7 +129,7 @@ export function CheckinPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3001/api/checkin", {
+      const response = await fetch("/api/checkin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export function CheckinPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3001/api/checkin/checkout", {
+      const response = await fetch("/api/checkin/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
