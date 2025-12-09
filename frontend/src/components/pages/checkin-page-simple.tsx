@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserCheck, UserX, Users, RefreshCw } from "lucide-react";
+import { UserCheck, UserX, Users, RefreshCw, Mail, Key } from "lucide-react";
 import { CodeInput } from "@/components/ui/code-input";
 
 export function CheckinPageSimple() {
-  const [mode, setMode] = useState<"select" | "existing" | "new">("select"); // select mode, existing user, or new user
+  const [mode, setMode] = useState<"select" | "existing" | "account" | "new">("select"); // select mode, existing user (ID), account login, or new user
   const [userId, setUserId] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [currentCount, setCurrentCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -190,6 +192,16 @@ export function CheckinPageSimple() {
       return;
     }
 
+    if (!email.trim()) {
+      setMessage("Please enter your email address.");
+      return;
+    }
+
+    if (!password.trim() || password.length < 6) {
+      setMessage("Please enter a password (at least 6 characters).");
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch("/api/checkin/register-and-checkin", {
@@ -200,7 +212,9 @@ export function CheckinPageSimple() {
         body: JSON.stringify({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          customUserId: userId.trim()
+          customUserId: userId.trim(),
+          email: email.trim().toLowerCase(),
+          password: password
         }),
       });
 
@@ -214,6 +228,47 @@ export function CheckinPageSimple() {
         fetchCurrentCount();
       } else {
         setMessage(data.message || "Error creating user. Please try again.");
+      }
+    } catch {
+      setMessage("Error connecting to server");
+    }
+    setLoading(false);
+  };
+
+  const handleAccountLogin = async () => {
+    if (!email.trim()) {
+      setMessage("Please enter your email or username.");
+      return;
+    }
+
+    if (!password.trim()) {
+      setMessage("Please enter your password.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/checkin/account-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          emailOrUsername: email.trim().toLowerCase(),
+          password: password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserId(data.userId);
+        setIsCheckedIn(true);
+        localStorage.setItem("checkin_userId", data.userId);
+        setMessage(`Successfully checked in! Welcome back, ${data.username}.`);
+        fetchCurrentCount();
+      } else {
+        setMessage(data.message || "Invalid email/username or password.");
       }
     } catch {
       setMessage("Error connecting to server");
@@ -276,29 +331,121 @@ export function CheckinPageSimple() {
                   onClick={() => setMode("existing")}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 >
-                  I have an existing User ID
+                  <Key className="w-4 h-4 mr-2" />
+                  Login with 6-digit ID
                 </Button>
+
+                <Button
+                  onClick={() => setMode("account")}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Login with Email & Password
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-gray-500">Or</span>
+                  </div>
+                </div>
 
                 <Button
                   onClick={() => setMode("new")}
                   variant="outline"
                   className="w-full"
                 >
-                  I&apos;m a new user (create User ID)
+                  I&apos;m a new user (create account)
+                </Button>
+              </div>
+            ) : mode === "account" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email or Username</Label>
+                  <Input
+                    id="email"
+                    type="text"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com or username"
+                    className="mt-1"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="mt-1"
+                  />
+                </div>
+
+                {isCheckedIn ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                      <p className="text-green-700 font-medium">✓ You are currently checked in</p>
+                      <p className="text-sm text-green-600 mt-1">Click below to check out when you leave</p>
+                    </div>
+                    <Button
+                      onClick={handleCheckout}
+                      disabled={loading}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      <UserX className="w-4 h-4 mr-2" />
+                      {loading ? "Checking out..." : "Check Out"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleAccountLogin}
+                    disabled={loading}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    {loading ? "Logging in..." : "Login & Check In"}
+                  </Button>
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode("select");
+                    setEmail("");
+                    setPassword("");
+                    setMessage("");
+                    setIsCheckedIn(false);
+                  }}
+                  className="w-full"
+                >
+                  Back
                 </Button>
               </div>
             ) : mode === "existing" ? (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="userId">Enter your 6-digit User ID</Label>
-                  <div className="mt-2 flex justify-center">
-                    <CodeInput
-                      value={userId}
-                      onChange={setUserId}
-                      length={6}
-                      autoFocus={true}
-                    />
-                  </div>
+                  <Input
+                    id="userId"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={userId}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setUserId(val);
+                    }}
+                    placeholder="000000"
+                    className="mt-2 text-center text-2xl tracking-[0.5em] font-mono"
+                    autoFocus
+                  />
                 </div>
 
                 {/* Status Badge */}
@@ -343,6 +490,16 @@ export function CheckinPageSimple() {
                   >
                     Back
                   </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setUserId("000000");
+                      setMessage("Demo ID entered. Click Check In to continue.");
+                    }}
+                    className="w-full text-gray-500"
+                  >
+                    Use Demo Account (000000)
+                  </Button>
                   {localStorage.getItem("checkin_userId") && (
                     <Button
                       variant="ghost"
@@ -384,6 +541,28 @@ export function CheckinPageSimple() {
                         className="mt-1"
                       />
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="regEmail">Email</Label>
+                    <Input
+                      id="regEmail"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="regPassword">Password</Label>
+                    <Input
+                      id="regPassword"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="mt-1"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="customUserId">Choose Your 6-digit User ID</Label>
@@ -462,6 +641,8 @@ export function CheckinPageSimple() {
                     setMode("select");
                     setFirstName("");
                     setLastName("");
+                    setEmail("");
+                    setPassword("");
                     setUserId("");
                     setMessage("");
                   }}

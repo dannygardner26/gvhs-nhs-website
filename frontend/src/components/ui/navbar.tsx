@@ -11,14 +11,13 @@ export function Navbar() {
   const pathname = usePathname();
 
   const navigation = [
-    { name: "/", href: "/" },
-    { name: "/checkin", href: "/checkin" },
-    { name: "/volunteering", href: "/volunteering" },
-    { name: "/tutor/register", href: "/tutor/register" },
-    { name: "/tutor/status", href: "/tutor/status" },
-    { name: "/tutor/checkin", href: "/tutor/checkin" },
-    { name: "/tutor/profile", href: "/tutor/profile" },
-    { name: "/admin", href: "/admin" },
+    { name: "Home", href: "/" },
+    { name: "Volunteering", href: "/volunteering" },
+    { name: "Tutor Register", href: "/tutor/register" },
+    { name: "Tutor Status", href: "/tutor/status" },
+    { name: "Check In", href: "/tutor/checkin" },
+    { name: "Profile", href: "/tutor/profile" },
+    { name: "Admin", href: "/admin" },
   ];
 
   return (

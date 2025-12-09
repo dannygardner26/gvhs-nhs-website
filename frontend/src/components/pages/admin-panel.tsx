@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
-import { CodeInput } from "@/components/ui/code-input";
+
+// Admin PIN - change this to your desired admin PIN
+const ADMIN_PIN = "123456";
 
 interface User {
   userId: string;
@@ -52,12 +54,16 @@ export function AdminPanel() {
   const [newUserId, setNewUserId] = useState("");
 
   const handleAuth = () => {
-    if (!/^\d{6}$/.test(nhsUserId)) {
-      setAuthError("NHS User ID must be exactly 6 digits");
+    if (!nhsUserId) {
+      setAuthError("Please enter the admin PIN");
       return;
     }
 
-    // For now, any valid 6-digit ID works for admin access
+    if (nhsUserId !== ADMIN_PIN) {
+      setAuthError("Invalid admin PIN");
+      return;
+    }
+
     setIsAuthenticated(true);
     setAuthError("");
     fetchUsers();
@@ -210,17 +216,19 @@ export function AdminPanel() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="nhsUserId">Enter Your NHS User ID</Label>
-                <div className="mt-2 flex justify-center">
-                  <CodeInput
-                    value={nhsUserId}
-                    onChange={setNhsUserId}
-                    length={6}
-                    autoFocus={true}
-                  />
-                </div>
+                <Label htmlFor="nhsUserId">Enter Admin PIN</Label>
+                <Input
+                  id="nhsUserId"
+                  type="password"
+                  value={nhsUserId}
+                  onChange={(e) => setNhsUserId(e.target.value)}
+                  placeholder="Enter admin PIN"
+                  className="mt-2 text-center"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                />
                 <p className="text-xs text-gray-600 mt-2 text-center">
-                  Enter your 6-digit NHS User ID to access admin features
+                  Enter the admin PIN to access admin features
                 </p>
               </div>
 

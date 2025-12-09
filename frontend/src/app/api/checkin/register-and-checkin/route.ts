@@ -1,16 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import bcrypt from 'bcryptjs'
 
 // POST /api/checkin/register-and-checkin - Register new user and check them in
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, lastName, customUserId } = await request.json()
+    const { firstName, lastName, customUserId, email, password } = await request.json()
 
     if (!firstName || !lastName || !customUserId) {
       return NextResponse.json(
         { error: 'First name, last name, and user ID are required' },
         { status: 400 }
       )
+    }
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Email and password are required' },
+        { status: 400 }
+      )
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
+        { status: 400 }
+      )
+    }
+
+    // Check if email is already taken
+    const { data: existingEmail } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single()
+
+    if (existingEmail) {
+      return NextResponse.json({
+        message: 'An account with this email already exists. Please use a different email or login with your existing account.'
+      }, { status: 400 })
     }
 
     const fullName = `${firstName} ${lastName}`
@@ -41,6 +69,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10)
+
     // Create new user
     const { data: newUser, error: createError } = await supabase
       .from('users')
@@ -48,7 +79,9 @@ export async function POST(request: NextRequest) {
         user_id: customUserId,
         first_name: firstName,
         last_name: lastName,
-        username: fullName
+        username: fullName,
+        email: email.toLowerCase(),
+        password_hash: passwordHash
       })
       .select()
       .single()

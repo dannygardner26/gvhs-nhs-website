@@ -7,10 +7,12 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Users table - stores registered users
 CREATE TABLE users (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id VARCHAR(50) UNIQUE NOT NULL, -- Custom user ID/PIN
+  user_id VARCHAR(50) UNIQUE NOT NULL, -- Custom user ID/PIN (6-digit)
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   username VARCHAR(200) NOT NULL,
+  email VARCHAR(255) UNIQUE, -- For account-based login
+  password_hash VARCHAR(255), -- Bcrypt hashed password
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -38,6 +40,7 @@ CREATE TABLE active_checkins (
 -- Indexes for better performance
 CREATE INDEX idx_users_user_id ON users(user_id);
 CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_session_history_user_id ON session_history(user_id);
 CREATE INDEX idx_session_history_checked_in_at ON session_history(checked_in_at);
 CREATE INDEX idx_active_checkins_checked_in_at ON active_checkins(checked_in_at);

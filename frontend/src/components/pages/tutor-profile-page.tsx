@@ -5,8 +5,68 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CodeInput } from "@/components/ui/code-input";
-import { User, BookOpen, Star, Clock, LogIn, UserPlus, Link } from "lucide-react";
+import { User, BookOpen, Star, Clock, LogIn, UserPlus, Check } from "lucide-react";
+
+// Days and periods for availability grid
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const PERIODS = ["Before School", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "After School"];
+
+// Available subjects for tutoring
+const AVAILABLE_SUBJECTS = {
+  "Math": [
+    "Pre-Algebra",
+    "Algebra 1",
+    "Geometry",
+    "Algebra 2",
+    "Pre-Calculus",
+    "AP Calculus AB",
+    "AP Calculus BC",
+    "AP Statistics",
+    "Multivariable Calculus",
+  ],
+  "Science": [
+    "Biology",
+    "Chemistry",
+    "Physics",
+    "AP Biology",
+    "AP Chemistry",
+    "AP Physics 1",
+    "AP Physics 2",
+    "AP Physics C: Mechanics",
+    "AP Physics C: E&M",
+    "AP Environmental Science",
+  ],
+  "English": [
+    "English 9",
+    "English 10",
+    "English 11",
+    "AP English Language",
+    "AP English Literature",
+  ],
+  "History & Social Studies": [
+    "World History",
+    "US History",
+    "AP World History",
+    "AP US History",
+    "AP Government",
+    "AP Economics (Micro)",
+    "AP Economics (Macro)",
+    "AP Psychology",
+    "AP Human Geography",
+  ],
+  "Languages": [
+    "Spanish",
+    "French",
+    "Chinese",
+    "AP Spanish",
+    "AP French",
+    "AP Chinese",
+  ],
+  "Computer Science": [
+    "AP Computer Science A",
+    "AP Computer Science Principles",
+  ],
+};
 
 interface TutorProfile {
   id: string;
@@ -32,10 +92,32 @@ export function TutorProfilePage() {
 
   // Profile data
   const [profile, setProfile] = useState<TutorProfile | null>(null);
-  const [subjects, setSubjects] = useState("");
-  const [availability, setAvailability] = useState("");
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [availabilityGrid, setAvailabilityGrid] = useState<Record<string, Record<string, boolean>>>({});
   const [experience, setExperience] = useState("");
   const [description, setDescription] = useState("");
+
+  const toggleSubject = (subject: string) => {
+    setSelectedSubjects(prev =>
+      prev.includes(subject)
+        ? prev.filter(s => s !== subject)
+        : [...prev, subject]
+    );
+  };
+
+  const toggleAvailability = (day: string, period: string) => {
+    setAvailabilityGrid(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [period]: !prev[day]?.[period]
+      }
+    }));
+  };
+
+  const isAvailable = (day: string, period: string) => {
+    return availabilityGrid[day]?.[period] || false;
+  };
 
   useEffect(() => {
     // Check if user is already logged in
@@ -65,8 +147,15 @@ export function TutorProfilePage() {
         totalSessions: 45
       };
       setProfile(mockProfile);
-      setSubjects(mockProfile.subjects.join(", "));
-      setAvailability(mockProfile.availability);
+      setSelectedSubjects(mockProfile.subjects);
+      // Mock availability grid
+      setAvailabilityGrid({
+        "Mon": { "P3": true, "P4": true, "After School": true },
+        "Tue": { "P3": true, "After School": true },
+        "Wed": { "P3": true, "P4": true },
+        "Thu": { "After School": true },
+        "Fri": { "P3": true, "P4": true, "After School": true },
+      });
       setExperience(mockProfile.experience);
       setDescription(mockProfile.description);
     } catch (error) {
@@ -224,31 +313,50 @@ export function TutorProfilePage() {
                         Enter your 6-digit NHS check-in ID. {" "}
                         <span
                           className="text-blue-600 underline cursor-pointer"
-                          onClick={() => window.open("/checkin", "_blank")}
+                          onClick={() => window.open("/tutor/checkin", "_blank")}
                         >
                           Don't have one? Create it here.
                         </span>
                       </p>
-                      <div className="flex justify-center">
-                        <CodeInput
-                          value={userId}
-                          onChange={setUserId}
-                          length={6}
-                        />
-                      </div>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        value={userId}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setUserId(val);
+                        }}
+                        placeholder="000000"
+                        className="text-center text-xl tracking-[0.5em] font-mono"
+                      />
                     </div>
                   </>
                 )}
 
                 {mode === "login" ? (
-                  <Button
-                    onClick={handleLogin}
-                    disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    <LogIn className="w-4 h-4 mr-2" />
-                    {loading ? "Signing in..." : "Sign In"}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleLogin}
+                      disabled={loading}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <LogIn className="w-4 h-4 mr-2" />
+                      {loading ? "Signing in..." : "Sign In"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setUsername("Demo User");
+                        setPassword("demo123");
+                        setMessage("Demo credentials entered. Click Sign In to continue.");
+                      }}
+                      className="w-full text-gray-500"
+                    >
+                      Use Demo Account
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     onClick={handleRegister}
@@ -307,26 +415,104 @@ export function TutorProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="subjects">Subjects You Tutor</Label>
-                <Input
-                  id="subjects"
-                  value={subjects}
-                  onChange={(e) => setSubjects(e.target.value)}
-                  placeholder="e.g. Mathematics, Physics, Chemistry"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-500 mt-1">Separate multiple subjects with commas</p>
+                <Label>Subjects You Tutor</Label>
+                {selectedSubjects.length > 0 && (
+                  <div className="mt-2 mb-3 flex flex-wrap gap-2">
+                    {selectedSubjects.map(subject => (
+                      <span
+                        key={subject}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {subject}
+                        <button
+                          type="button"
+                          onClick={() => toggleSubject(subject)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2 border rounded-lg p-3 max-h-64 overflow-y-auto bg-gray-50">
+                  {Object.entries(AVAILABLE_SUBJECTS).map(([category, subjects]) => (
+                    <div key={category} className="mb-4 last:mb-0">
+                      <h4 className="font-semibold text-sm text-gray-700 mb-2">{category}</h4>
+                      <div className="grid grid-cols-2 gap-1">
+                        {subjects.map(subject => (
+                          <label
+                            key={subject}
+                            className={`flex items-center p-2 rounded cursor-pointer text-sm transition-colors ${
+                              selectedSubjects.includes(subject)
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'hover:bg-gray-100'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSubjects.includes(subject)}
+                              onChange={() => toggleSubject(subject)}
+                              className="sr-only"
+                            />
+                            <span className={`w-4 h-4 mr-2 rounded border flex items-center justify-center ${
+                              selectedSubjects.includes(subject)
+                                ? 'bg-blue-600 border-blue-600'
+                                : 'border-gray-300'
+                            }`}>
+                              {selectedSubjects.includes(subject) && (
+                                <Check className="w-3 h-3 text-white" />
+                              )}
+                            </span>
+                            {subject}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''} selected</p>
               </div>
 
               <div>
-                <Label htmlFor="availability">Availability</Label>
-                <Input
-                  id="availability"
-                  value={availability}
-                  onChange={(e) => setAvailability(e.target.value)}
-                  placeholder="e.g. Mon-Fri 3:30-5:00 PM"
-                  className="mt-1"
-                />
+                <Label>Availability</Label>
+                <p className="text-xs text-gray-500 mb-2">Click cells to mark when you're available for tutoring</p>
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr>
+                        <th className="p-2 border bg-gray-100 font-medium text-gray-700 sticky left-0"></th>
+                        {PERIODS.map(period => (
+                          <th key={period} className="p-2 border bg-gray-100 font-medium text-gray-700 text-center min-w-[60px]">
+                            {period}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DAYS.map(day => (
+                        <tr key={day}>
+                          <td className="p-2 border bg-gray-50 font-medium text-gray-700 sticky left-0">{day}</td>
+                          {PERIODS.map(period => (
+                            <td
+                              key={`${day}-${period}`}
+                              onClick={() => toggleAvailability(day, period)}
+                              className={`p-2 border text-center cursor-pointer transition-colors ${
+                                isAvailable(day, period)
+                                  ? 'bg-green-500 hover:bg-green-600'
+                                  : 'bg-white hover:bg-gray-100'
+                              }`}
+                            >
+                              {isAvailable(day, period) && (
+                                <Check className="w-4 h-4 mx-auto text-white" />
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div>
