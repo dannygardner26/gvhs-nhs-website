@@ -13,8 +13,7 @@ export function Navbar() {
   const navigation = [
     { name: "Home", href: "/" },
     { name: "Volunteering", href: "/volunteering" },
-    { name: "Tutor Register", href: "/tutor/register" },
-    { name: "Tutor Status", href: "/tutor/status" },
+    { name: "Eligibility", href: "/eligibility" },
     { name: "Check In", href: "/tutor/checkin" },
     { name: "Profile", href: "/tutor/profile" },
     { name: "Admin", href: "/admin" },

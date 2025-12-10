@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserCheck, UserX, Users, RefreshCw, Mail, Key } from "lucide-react";
-import { CodeInput } from "@/components/ui/code-input";
 
 export function CheckinPageSimple() {
   const [mode, setMode] = useState<"select" | "existing" | "account" | "new">("select"); // select mode, existing user (ID), account login, or new user
@@ -237,7 +236,7 @@ export function CheckinPageSimple() {
 
   const handleAccountLogin = async () => {
     if (!email.trim()) {
-      setMessage("Please enter your email or username.");
+      setMessage("Please enter your User ID or email.");
       return;
     }
 
@@ -254,7 +253,7 @@ export function CheckinPageSimple() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          emailOrUsername: email.trim().toLowerCase(),
+          userIdOrEmail: email.trim().toLowerCase(),
           password: password
         }),
       });
@@ -268,7 +267,7 @@ export function CheckinPageSimple() {
         setMessage(`Successfully checked in! Welcome back, ${data.username}.`);
         fetchCurrentCount();
       } else {
-        setMessage(data.message || "Invalid email/username or password.");
+        setMessage(data.message || "Invalid User ID/email or password.");
       }
     } catch {
       setMessage("Error connecting to server");
@@ -363,13 +362,13 @@ export function CheckinPageSimple() {
             ) : mode === "account" ? (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Email or Username</Label>
+                  <Label htmlFor="email">User ID or Email</Label>
                   <Input
                     id="email"
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com or username"
+                    placeholder="123456 or your@email.com"
                     className="mt-1"
                     autoFocus
                   />
@@ -566,31 +565,35 @@ export function CheckinPageSimple() {
                   </div>
                   <div>
                     <Label htmlFor="customUserId">Choose Your 6-digit User ID</Label>
-                    <div className="mt-2 flex justify-center">
-                      <CodeInput
+                    <div className="relative">
+                      <Input
+                        id="customUserId"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
                         value={userId}
-                        onChange={setUserId}
-                        length={6}
-                        className={
-                          userIdAvailable === true ? '[&>input]:border-green-500 [&>input]:bg-green-50' :
-                          userIdAvailable === false ? '[&>input]:border-red-500 [&>input]:bg-red-50' : ''
-                        }
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setUserId(val);
+                        }}
+                        placeholder="000000"
+                        className={`mt-2 text-center text-2xl tracking-[0.5em] font-mono ${
+                          userIdAvailable === true ? 'border-green-500 bg-green-50' :
+                          userIdAvailable === false ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 mt-1">
+                        {checkingAvailability ? (
+                          <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />
+                        ) : userIdAvailable === true ? (
+                          <UserCheck className="w-5 h-5 text-green-500" />
+                        ) : userIdAvailable === false ? (
+                          <UserX className="w-5 h-5 text-red-500" />
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="flex justify-center mt-2">
-                      {userId && userId.length > 0 && (
-                        <div className="flex items-center">
-                          {checkingAvailability ? (
-                            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin mr-2" />
-                          ) : userIdAvailable === true ? (
-                            <UserCheck className="w-4 h-4 text-green-500 mr-2" />
-                          ) : userIdAvailable === false ? (
-                            <UserX className="w-4 h-4 text-red-500 mr-2" />
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-600 mt-2 text-center">
                       {userIdAvailable === true ? (
                         <span className="text-green-600">✓ This ID is available</span>
                       ) : userIdAvailable === false ? (
@@ -602,7 +605,7 @@ export function CheckinPageSimple() {
                       ) : !/^\d{6}$/.test(userId) ? (
                         <span className="text-red-600">ID must contain only numbers</span>
                       ) : (
-                        "Choose a unique 6-digit ID you'll remember for future check-ins"
+                        "Choose a unique 6-digit ID you'll remember"
                       )}
                     </p>
                   </div>

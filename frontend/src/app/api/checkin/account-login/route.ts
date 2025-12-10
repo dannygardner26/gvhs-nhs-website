@@ -2,46 +2,54 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 
-// POST /api/checkin/account-login - Login with email/username and password, then check in
+// POST /api/checkin/account-login - Login with User ID or email and password, then check in
 export async function POST(request: NextRequest) {
   try {
-    const { emailOrUsername, password } = await request.json()
+    const { userIdOrEmail, password } = await request.json()
 
-    if (!emailOrUsername || !password) {
+    if (!userIdOrEmail || !password) {
       return NextResponse.json(
-        { error: 'Email/username and password are required' },
+        { error: 'User ID or email and password are required' },
         { status: 400 }
       )
     }
 
-    // Try to find user by email first, then by username
+    // Try to find user by User ID first (if it's a 6-digit number), then by email
     let user = null
+    const inputValue = userIdOrEmail.trim().toLowerCase()
 
-    // Try email
-    const { data: userByEmail } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', emailOrUsername.toLowerCase())
-      .single()
+    // Check if the input looks like a 6-digit User ID
+    const is6DigitId = /^\d{6}$/.test(inputValue)
 
-    if (userByEmail) {
-      user = userByEmail
-    } else {
-      // Try username (case insensitive)
-      const { data: userByUsername } = await supabase
+    if (is6DigitId) {
+      // Try finding by User ID
+      const { data: userById } = await supabase
         .from('users')
         .select('*')
-        .ilike('username', emailOrUsername)
+        .eq('user_id', inputValue)
         .single()
 
-      if (userByUsername) {
-        user = userByUsername
+      if (userById) {
+        user = userById
+      }
+    }
+
+    // If not found by ID, try email
+    if (!user) {
+      const { data: userByEmail } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', inputValue)
+        .single()
+
+      if (userByEmail) {
+        user = userByEmail
       }
     }
 
     if (!user) {
       return NextResponse.json({
-        message: 'Invalid email/username or password'
+        message: 'Invalid User ID/email or password'
       }, { status: 401 })
     }
 
@@ -56,7 +64,7 @@ export async function POST(request: NextRequest) {
     const passwordMatch = await bcrypt.compare(password, user.password_hash)
     if (!passwordMatch) {
       return NextResponse.json({
-        message: 'Invalid email/username or password'
+        message: 'Invalid User ID/email or password'
       }, { status: 401 })
     }
 

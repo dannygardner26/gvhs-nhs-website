@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CodeInput } from "@/components/ui/code-input";
-import { Heart, Users, Camera, Clock, MapPin, Calendar, Gamepad2, HandHeart, Laptop } from "lucide-react";
+import { Heart, Users, Camera, Clock, MapPin, Calendar, Gamepad2, HandHeart, Laptop, Mail, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 interface VolunteerOpportunity {
   id: string;
@@ -19,6 +19,10 @@ interface VolunteerOpportunity {
   category: "community" | "social-media" | "tutoring";
   spots?: number;
   requirements?: string[];
+  contactType: "link" | "email" | "signup";
+  contactInfo?: string;
+  contactLabel?: string;
+  signupLink?: string;
 }
 
 const opportunities: VolunteerOpportunity[] = [
@@ -32,7 +36,11 @@ const opportunities: VolunteerOpportunity[] = [
     icon: <Users className="w-6 h-6" />,
     category: "community",
     spots: 8,
-    requirements: ["Background check required", "Training session attendance", "Reliable transportation"]
+    requirements: ["Background check required", "Training session attendance", "Reliable transportation"],
+    contactType: "signup",
+    contactInfo: "pmorabito@gvsd.org",
+    contactLabel: "Contact Mrs. Morabito",
+    signupLink: "/volunteering/school-visits"
   },
   {
     id: "kids-in-motion",
@@ -44,7 +52,10 @@ const opportunities: VolunteerOpportunity[] = [
     icon: <Gamepad2 className="w-6 h-6" />,
     category: "community",
     spots: 12,
-    requirements: ["Physical activity comfort", "Good with children", "Weekend availability"]
+    requirements: ["Physical activity comfort", "Good with children", "Weekend availability"],
+    contactType: "link",
+    contactInfo: "https://kidsinmotionpa.org/events",
+    contactLabel: "View Events"
   },
   {
     id: "interact-club",
@@ -56,7 +67,10 @@ const opportunities: VolunteerOpportunity[] = [
     icon: <HandHeart className="w-6 h-6" />,
     category: "community",
     spots: 20,
-    requirements: ["Flexible schedule", "Team player attitude", "Commitment to service"]
+    requirements: ["Flexible schedule", "Team player attitude", "Commitment to service"],
+    contactType: "email",
+    contactInfo: "abillman26@student.gvsd.org",
+    contactLabel: "Contact Anna Billman"
   },
   {
     id: "gvco-tech-seniors",
@@ -68,7 +82,10 @@ const opportunities: VolunteerOpportunity[] = [
     icon: <Laptop className="w-6 h-6" />,
     category: "community",
     spots: 10,
-    requirements: ["Technology proficiency", "Patience with seniors", "Clear communication skills"]
+    requirements: ["Technology proficiency", "Patience with seniors", "Clear communication skills"],
+    contactType: "email",
+    contactInfo: "nhsadvisor@gvsd.org",
+    contactLabel: "Contact NHS Advisor"
   },
   {
     id: "social-media",
@@ -79,7 +96,10 @@ const opportunities: VolunteerOpportunity[] = [
     date: "Ongoing",
     icon: <Camera className="w-6 h-6" />,
     category: "social-media",
-    requirements: ["Creative skills", "Social media experience preferred", "Photo/video editing knowledge helpful"]
+    requirements: ["Creative skills", "Social media experience preferred", "Photo/video editing knowledge helpful"],
+    contactType: "email",
+    contactInfo: "nhsadvisor@gvsd.org",
+    contactLabel: "Contact NHS Advisor"
   },
   {
     id: "peer-tutoring",
@@ -91,7 +111,10 @@ const opportunities: VolunteerOpportunity[] = [
     icon: <Heart className="w-6 h-6" />,
     category: "tutoring",
     spots: 15,
-    requirements: ["GPA 3.5 or higher", "Subject area expertise", "Patient teaching attitude"]
+    requirements: ["GPA 3.5 or higher", "Subject area expertise", "Patient teaching attitude"],
+    contactType: "signup",
+    signupLink: "/tutor/register",
+    contactLabel: "Register as Tutor"
   }
 ];
 
@@ -108,11 +131,6 @@ export function VolunteeringPage() {
   });
   const [submittingForm, setSubmittingForm] = useState(false);
   const [formMessage, setFormMessage] = useState("");
-
-  const handleSignUp = (opportunityId: string) => {
-    // TODO: Implement sign-up functionality
-    alert(`Sign up for ${opportunities.find(o => o.id === opportunityId)?.title} - Coming soon!`);
-  };
 
   const handleSuggestionSubmit = async () => {
     if (!suggestionForm.nhsUserId || !suggestionForm.opportunityTitle || !suggestionForm.description) {
@@ -173,8 +191,70 @@ export function VolunteeringPage() {
     }
   };
 
+  const renderActionButton = (opportunity: VolunteerOpportunity) => {
+    switch (opportunity.contactType) {
+      case "link":
+        return (
+          <a
+            href={opportunity.contactInfo}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full"
+          >
+            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              {opportunity.contactLabel}
+            </Button>
+          </a>
+        );
+      case "email":
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <Mail className="w-4 h-4 text-gray-500" />
+              <a
+                href={`mailto:${opportunity.contactInfo}`}
+                className="text-blue-600 hover:underline text-sm font-medium"
+              >
+                {opportunity.contactInfo}
+              </a>
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              {opportunity.contactLabel}
+            </p>
+          </div>
+        );
+      case "signup":
+        return (
+          <div className="space-y-2">
+            {opportunity.signupLink && (
+              <Link href={opportunity.signupLink} className="block">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  Sign Up
+                </Button>
+              </Link>
+            )}
+            {opportunity.contactInfo && (
+              <div className="flex items-center justify-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <Mail className="w-3 h-3 text-gray-500" />
+                <span className="text-xs text-gray-600">Questions?</span>
+                <a
+                  href={`mailto:${opportunity.contactInfo}`}
+                  className="text-blue-600 hover:underline text-xs"
+                >
+                  {opportunity.contactInfo}
+                </a>
+              </div>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 pt-24">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
@@ -271,13 +351,8 @@ export function VolunteeringPage() {
                   </div>
                 )}
 
-                {/* Sign Up Button */}
-                <Button
-                  onClick={() => handleSignUp(opportunity.id)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  Sign Up to Volunteer
-                </Button>
+                {/* Action Button/Contact Info */}
+                {renderActionButton(opportunity)}
               </CardContent>
             </Card>
           ))}
@@ -311,13 +386,20 @@ export function VolunteeringPage() {
                 <div className="max-w-2xl mx-auto space-y-4">
                   <div>
                     <Label htmlFor="nhsUserId">Your NHS User ID *</Label>
-                    <div className="mt-2 flex justify-center">
-                      <CodeInput
-                        value={suggestionForm.nhsUserId}
-                        onChange={(value) => setSuggestionForm(prev => ({ ...prev, nhsUserId: value }))}
-                        length={6}
-                      />
-                    </div>
+                    <Input
+                      id="nhsUserId"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      value={suggestionForm.nhsUserId}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setSuggestionForm(prev => ({ ...prev, nhsUserId: val }));
+                      }}
+                      placeholder="Enter your 6-digit ID"
+                      className="mt-1 text-center tracking-widest font-mono"
+                    />
                   </div>
 
                   <div>
