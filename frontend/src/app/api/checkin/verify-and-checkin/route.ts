@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       .from('active_checkins')
       .insert({
         user_id: userId,
-        username: user.username,
         checked_in_at: checkedInAt
       })
 
@@ -62,7 +61,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Successfully checked in',
       userId,
-      username: user.username,
+      firstName: user.first_name,
+      lastName: user.last_name,
       checkedInAt
     })
 

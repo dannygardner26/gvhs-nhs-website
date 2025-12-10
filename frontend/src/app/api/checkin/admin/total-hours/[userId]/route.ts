@@ -11,9 +11,8 @@ export async function GET(
 
     const { data: sessions, error } = await supabase
       .from('session_history')
-      .select('duration_ms')
+      .select('duration_ms, duration')
       .eq('user_id', userId)
-      .not('duration_ms', 'is', null)
 
     if (error) {
       console.error('Error getting total hours:', error)
@@ -23,14 +22,26 @@ export async function GET(
       )
     }
 
-    const totalMilliseconds = sessions?.reduce((sum, session) => sum + (session.duration_ms || 0), 0) || 0
+    // Handle both duration_ms (new) and duration (old) fields for backwards compatibility
+    const validSessions = sessions?.filter(session =>
+      session.duration_ms !== null || session.duration !== null
+    ) || []
+
+    const totalMilliseconds = validSessions.reduce((sum, session) => {
+      // Prefer duration_ms if available, otherwise use duration field
+      const durationMs = session.duration_ms || session.duration || 0
+      return sum + durationMs
+    }, 0)
+
     const totalHours = totalMilliseconds / (1000 * 60 * 60)
+    const hours = Math.floor(totalHours)
+    const minutes = Math.floor((totalHours - hours) * 60)
 
     return NextResponse.json({
       userId,
-      totalSessions: sessions?.length || 0,
+      totalSessions: validSessions.length,
       totalMilliseconds,
-      totalHours: parseFloat(totalHours.toFixed(2))
+      totalHours: `${hours}h ${minutes}m`
     })
 
   } catch (error) {

@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
       .from('session_history')
       .insert({
         user_id: userId,
-        username: activeCheckin.username,
         checked_in_at: activeCheckin.checked_in_at,
         checked_out_at: checkedOutAt.toISOString(),
         duration_ms: sessionDuration

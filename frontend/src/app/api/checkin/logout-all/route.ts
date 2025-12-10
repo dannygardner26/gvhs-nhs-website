@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
 
       sessionRecords.push({
         user_id: checkin.user_id,
-        username: checkin.username,
         checked_in_at: checkin.checked_in_at,
         checked_out_at: checkedOutAt,
         duration_ms: sessionDuration,

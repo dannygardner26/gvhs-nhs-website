@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
         *,
         active_checkins(checked_in_at)
       `)
-      .order('username')
+      .order('last_name')
 
     if (error) {
       console.error('Error getting all users:', error)
@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
         return {
           ...user,
           userId: maskUserId(decryptedUserId), // Masked for display
-          user_id: maskUserId(decryptedUserId), // For compatibility
+          user_id: maskUserId(decryptedUserId), // For compatibility (masked)
+          real_user_id: user.user_id, // Real database ID for deletion operations
           isCheckedIn: user.active_checkins && user.active_checkins.length > 0,
           checkedInAt: user.active_checkins?.[0]?.checked_in_at || null,
           // Remove password hash from response
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
           ...user,
           userId: '***ERROR***',
           user_id: '***ERROR***',
+          real_user_id: user.user_id, // Keep real ID even if decryption fails
           isCheckedIn: false,
           checkedInAt: null,
           password_hash: undefined

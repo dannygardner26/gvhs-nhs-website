@@ -10,7 +10,6 @@ export async function POST() {
         user_id: '000001',
         first_name: 'Test',
         last_name: 'User One',
-        username: 'Test User One',
         email: 'test1@example.com',
         password: 'test123'
       },
@@ -18,7 +17,6 @@ export async function POST() {
         user_id: '000002',
         first_name: 'Test',
         last_name: 'User Two',
-        username: 'Test User Two',
         email: 'test2@example.com',
         password: 'test123'
       },
@@ -26,7 +24,6 @@ export async function POST() {
         user_id: '000003',
         first_name: 'Test',
         last_name: 'User Three',
-        username: 'Test User Three',
         email: 'test3@example.com',
         password: 'test123'
       }
@@ -57,7 +54,6 @@ export async function POST() {
           user_id: user.user_id,
           first_name: user.first_name,
           last_name: user.last_name,
-          username: user.username,
           email: user.email,
           password_hash: passwordHash
         })
@@ -93,7 +89,7 @@ export async function GET() {
     for (const userId of testUserIds) {
       const { data } = await supabase
         .from('users')
-        .select('user_id, username, email')
+        .select('user_id, first_name, last_name, email')
         .eq('user_id', userId)
         .single()
 

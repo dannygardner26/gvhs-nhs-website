@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         message: 'You are already checked in',
         userId: decryptedUserId,
-        username: user.username,
+        firstName: user.first_name,
+        lastName: user.last_name,
         isCheckedIn: true,
         checkedInAt: existingCheckin.checked_in_at
       })
@@ -122,7 +123,6 @@ export async function POST(request: NextRequest) {
       .from('active_checkins')
       .insert({
         user_id: decryptedUserId,
-        username: user.username,
         checked_in_at: checkedInAt
       })
 
@@ -137,7 +137,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Successfully logged in and checked in',
       userId: decryptedUserId,
-      username: user.username,
+      firstName: user.first_name,
+      lastName: user.last_name,
       checkedInAt
     })
 

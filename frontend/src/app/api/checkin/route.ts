@@ -4,11 +4,11 @@ import { supabase } from '@/lib/supabase'
 // POST /api/checkin - Check in user
 export async function POST(request: NextRequest) {
   try {
-    const { userId, username } = await request.json()
+    const { userId } = await request.json()
 
-    if (!userId || !username) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'User ID and username are required' },
+        { error: 'User ID is required' },
         { status: 400 }
       )
     }
@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
       .from('active_checkins')
       .insert({
         user_id: userId,
-        username,
         checked_in_at: checkedInAt
       })
 

@@ -193,44 +193,88 @@ export function UserCard({
 
       {/* Hours Breakdown */}
       {isExpanded && (
-        <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
-          <h4 className="font-semibold text-sm mb-3">Session History & Total Hours</h4>
-
-          {userHours && (
-            <div className="mb-3 p-2 bg-blue-50 rounded">
-              <div className="text-lg font-bold text-blue-800">
-                Total Hours: {userHours.totalHours}
-              </div>
-              <div className="text-sm text-blue-600">
-                Total Sessions: {userHours.totalSessions}
-              </div>
+        <div className="mt-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <h4 className="font-semibold text-gray-800">Volunteer Hours & Session History</h4>
             </div>
-          )}
 
-          <div className="max-h-48 overflow-y-auto">
-            {userSessions && userSessions.length > 0 ? (
-              <div className="space-y-2">
-                {userSessions.map((session: any, index: number) => (
-                  <div key={index} className="text-xs bg-white p-2 rounded border">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium">
-                          {formatDateTime(session.checkedInAt)} → {formatDateTime(session.checkedOutAt)}
-                        </div>
-                        <div className="text-gray-500 mt-1">
-                          Duration: {formatDuration(session.duration)}
-                          {session.forcedByAdmin && (
-                            <span className="text-red-500 ml-2">(Force checkout by admin)</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+            {userHours ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
+                  <div className="text-2xl font-bold text-blue-700">
+                    {userHours.totalHours}
                   </div>
-                ))}
+                  <div className="text-sm text-blue-600 font-medium">Total Hours</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-green-100 shadow-sm">
+                  <div className="text-2xl font-bold text-green-700">
+                    {userHours.totalSessions}
+                  </div>
+                  <div className="text-sm text-green-600 font-medium">Total Sessions</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm">
+                  <div className="text-2xl font-bold text-purple-700">
+                    {userHours.totalSessions > 0
+                      ? `${Math.round((userHours.totalMilliseconds / userHours.totalSessions) / (1000 * 60))}m`
+                      : '0m'
+                    }
+                  </div>
+                  <div className="text-sm text-purple-600 font-medium">Avg Session</div>
+                </div>
               </div>
             ) : (
-              <div className="text-sm text-gray-500">No session history available</div>
+              <div className="bg-white p-3 rounded-lg border border-gray-200 mb-4">
+                <div className="text-gray-500 text-center">Loading volunteer hours...</div>
+              </div>
             )}
+
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-3 bg-gray-50 rounded-t-lg border-b border-gray-200">
+                <h5 className="font-medium text-gray-800">Recent Sessions</h5>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                {userSessions && userSessions.length > 0 ? (
+                  <div className="divide-y divide-gray-100">
+                    {userSessions.map((session: any, index: number) => (
+                      <div key={index} className="p-3 hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-medium text-sm text-gray-800">
+                                {formatDateTime(session.checked_in_at)}
+                              </div>
+                              <span className="text-gray-400">→</span>
+                              <div className="font-medium text-sm text-gray-800">
+                                {formatDateTime(session.checked_out_at)}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatDuration(session.duration_ms || session.duration || 0)}
+                              </span>
+                              {session.forced_by_admin && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                  Forced Checkout
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <div className="font-medium">No session history</div>
+                    <div className="text-sm">Sessions will appear here after check-ins</div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

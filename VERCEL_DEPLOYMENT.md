@@ -13,8 +13,8 @@ SUPABASE_SERVICE_KEY=sb_secret_bBqk-J8ALyz78DSyGIJmDA_WO4PG_Ps
 
 ### Security Configuration
 ```
-# Admin authentication (generated from hashing "Volunteeringisgreat")
-ADMIN_PIN_HASH=$2a$12$LQv3c1yqBWVHxkjp/4v9rO5S8TbYyKj4MZWjLaZoK8P1aU3oC4Q9G
+# Admin authentication (plain text stored in environment variables)
+ADMIN_PIN=Volunteeringisgreat
 
 # Master admin override for emergencies
 MASTER_ADMIN_PIN=EMERGENCY_OVERRIDE_2024

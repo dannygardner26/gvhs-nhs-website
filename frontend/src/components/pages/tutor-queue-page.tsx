@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from "react";
 
 interface CheckedInUser {
-  userId: string;
-  username: string;
-  checkedInAt: string;
+  user_id: string;
+  checked_in_at: string;
+  users: {
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export function TutorQueuePage() {
@@ -113,7 +116,7 @@ export function TutorQueuePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {activeUsers.map((user, index) => (
                   <div
-                    key={user.userId}
+                    key={user.user_id}
                     style={{
                       padding: '0.75rem',
                       backgroundColor: 'white',
@@ -123,7 +126,7 @@ export function TutorQueuePage() {
                     }}
                   >
                     <div style={{ fontWeight: 'bold', color: '#111827' }}>
-                      {index + 1}. {user.username}
+                      {index + 1}. {user.users.first_name} {user.users.last_name}
                     </div>
                   </div>
                 ))}

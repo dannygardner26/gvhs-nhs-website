@@ -6,7 +6,14 @@ export async function GET(request: NextRequest) {
   try {
     const { data: activeUsers, error } = await supabase
       .from('active_checkins')
-      .select('user_id, username, checked_in_at')
+      .select(`
+        user_id,
+        checked_in_at,
+        users (
+          first_name,
+          last_name
+        )
+      `)
       .order('checked_in_at', { ascending: false })
 
     if (error) {

@@ -13,10 +13,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get the active check-in
+    // Get the active check-in and user info
     const { data: activeCheckin, error: fetchError } = await supabase
       .from('active_checkins')
-      .select('*')
+      .select(`
+        *,
+        users!inner(first_name, last_name)
+      `)
       .eq('user_id', userId)
       .single()
 
@@ -36,7 +39,6 @@ export async function POST(request: NextRequest) {
       .from('session_history')
       .insert({
         user_id: userId,
-        username: activeCheckin.username,
         checked_in_at: activeCheckin.checked_in_at,
         checked_out_at: checkedOutAt.toISOString(),
         duration_ms: sessionDuration,
@@ -68,7 +70,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'User successfully checked out',
       userId,
-      username: activeCheckin.username
+      firstName: activeCheckin.users.first_name,
+      lastName: activeCheckin.users.last_name
     })
 
   } catch (error) {

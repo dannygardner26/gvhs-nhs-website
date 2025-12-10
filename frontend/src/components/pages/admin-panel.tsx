@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb, Trash2, AlertTriangle } from "lucide-react";
+import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb, Trash2, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { UserCard } from "@/components/admin/UserCard";
-import { verifyAdminPin } from "@/lib/encryption";
+import { ActiveUsersPanel } from "@/components/admin/ActiveUsersPanel";
 
 interface User {
   userId: string;
@@ -39,6 +39,7 @@ export function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [nhsUserId, setNhsUserId] = useState("");
   const [authError, setAuthError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [opportunitySuggestions, setOpportunitySuggestions] = useState([]);
 
   const [users, setUsers] = useState<User[]>([]);
@@ -59,29 +60,22 @@ export function AdminPanel() {
     }
 
     try {
-      // Check for master admin override first
-      const masterAdminPin = process.env.MASTER_ADMIN_PIN || "EMERGENCY_OVERRIDE_2024";
-      if (nhsUserId === masterAdminPin) {
+      const response = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: nhsUserId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setIsAuthenticated(true);
         setAuthError("");
         fetchUsers();
         fetchOpportunitySuggestions();
-        return;
+      } else {
+        setAuthError(data.error || "Invalid admin PIN");
       }
-
-      // Verify against hashed admin PIN
-      const adminPinHash = process.env.ADMIN_PIN_HASH || "$2a$12$LQv3c1yqBWVHxkjp/4v9rO5S8TbYyKj4MZWjLaZoK8P1aU3oC4Q9G";
-      const isValidPin = await verifyAdminPin(nhsUserId, adminPinHash);
-
-      if (!isValidPin) {
-        setAuthError("Invalid admin PIN");
-        return;
-      }
-
-      setIsAuthenticated(true);
-      setAuthError("");
-      fetchUsers();
-      fetchOpportunitySuggestions();
     } catch (error) {
       console.error("Authentication error:", error);
       setAuthError("Authentication failed");
@@ -205,10 +199,24 @@ export function AdminPanel() {
   const handleDeleteUser = async (userId: string, email: string) => {
     setDeletingUserId(userId);
     try {
+      // Find the user in the current users array to get the real database ID
+      const userToDelete = users.find(u => (u.userId || u.user_id) === userId);
+      const realUserId = userToDelete?.real_user_id;
+
+      console.log('Admin Panel Delete - Masked ID:', userId);
+      console.log('Admin Panel Delete - Real ID:', realUserId);
+      console.log('Admin Panel Delete - User object:', userToDelete);
+
+      if (!realUserId) {
+        setMessage(`Error: Could not find database ID for user ${email}`);
+        setDeletingUserId(null);
+        return;
+      }
+
       const response = await fetch("/api/checkin/admin/delete-user", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId: realUserId }), // Use real database ID
       });
 
       const data = await response.json();
@@ -216,8 +224,8 @@ export function AdminPanel() {
       if (response.ok) {
         setMessage(`Successfully deleted user ${email} (${userId}) from all systems`);
         setDeleteConfirmUserId(null);
-        // Remove user from local state immediately
-        setUsers(prev => prev.filter(user => user.userId !== userId));
+        // Remove user from local state immediately using the masked ID for filtering
+        setUsers(prev => prev.filter(user => (user.userId || user.user_id) !== userId));
         // Clear any expanded data for this user
         if (expandedUserId === userId) {
           setExpandedUserId(null);
@@ -268,16 +276,31 @@ export function AdminPanel() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="nhsUserId">Enter Admin PIN</Label>
-                <Input
-                  id="nhsUserId"
-                  type="password"
-                  value={nhsUserId}
-                  onChange={(e) => setNhsUserId(e.target.value)}
-                  placeholder="Enter admin PIN"
-                  className="mt-2 text-center"
-                  autoFocus
-                  onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
-                />
+                <div className="relative mt-2">
+                  <Input
+                    id="nhsUserId"
+                    type={showPassword ? "text" : "password"}
+                    value={nhsUserId}
+                    onChange={(e) => setNhsUserId(e.target.value)}
+                    placeholder="Enter admin PIN"
+                    className="text-center pr-10"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
                 <p className="text-xs text-gray-600 mt-2 text-center">
                   Enter the admin PIN to access admin features
                 </p>
@@ -322,6 +345,9 @@ export function AdminPanel() {
             {message}
           </div>
         )}
+
+        {/* Active Users Panel */}
+        <ActiveUsersPanel onForceCheckout={() => fetchUsers()} />
 
         {/* Opportunity Suggestions */}
         <Card className="mb-6">

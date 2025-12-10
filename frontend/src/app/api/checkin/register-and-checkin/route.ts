@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
     const { data: existingUserWithName } = await supabase
       .from('users')
       .select('*')
-      .ilike('username', fullName)
+      .eq('first_name', firstName)
+      .eq('last_name', lastName)
       .single()
 
     if (existingUserWithName) {
@@ -86,7 +87,6 @@ export async function POST(request: NextRequest) {
         user_id: encryptedUserId,
         first_name: firstName,
         last_name: lastName,
-        username: fullName,
         email: email ? email.toLowerCase() : null,
         password_hash: encryptedPasswordHash
       })
@@ -107,7 +107,6 @@ export async function POST(request: NextRequest) {
       .from('active_checkins')
       .insert({
         user_id: customUserId,
-        username: fullName,
         checked_in_at: checkedInAt
       })
 
@@ -125,7 +124,6 @@ export async function POST(request: NextRequest) {
       userId: customUserId,
       firstName: firstName,
       lastName: lastName,
-      username: fullName,
       email: email,
       checkedInAt
     })
