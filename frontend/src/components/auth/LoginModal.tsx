@@ -126,7 +126,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
           {/* Registration Link */}
           <div className="text-center pt-2 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Button
                 variant="ghost"
                 size="sm"

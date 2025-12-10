@@ -436,7 +436,7 @@ export function TutorProfilePage() {
                         <div className="text-center py-8">
                           <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                           <p className="text-gray-500 mb-2">No subjects selected yet</p>
-                          <p className="text-sm text-gray-400">Click "Edit" to add subjects you can tutor</p>
+                          <p className="text-sm text-gray-400">Click &quot;Edit&quot; to add subjects you can tutor</p>
                         </div>
                       )}
                     </div>

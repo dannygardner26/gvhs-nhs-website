@@ -62,7 +62,7 @@ export function ProtectedRoute({
                 </Button>
 
                 <p className="text-sm text-gray-500">
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <button
                     onClick={() => {
                       // Trigger registration modal - this would need to be implemented

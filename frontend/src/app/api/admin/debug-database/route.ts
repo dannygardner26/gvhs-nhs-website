@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Debugging database structure...')
 
-    const debug: any = {
+    const debug: Record<string, unknown> = {
       tables: {},
       errors: []
     }

@@ -6,15 +6,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Key, ChevronDown, ChevronUp, Trash2, AlertTriangle, Clock } from "lucide-react";
 
+interface UserData {
+  user_id?: string;
+  userId?: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  isCheckedIn?: boolean;
+  checkedInAt?: string;
+}
+
+interface SessionData {
+  checked_in_at: string;
+  checked_out_at: string;
+  duration_ms?: number;
+  duration?: number;
+  forced_by_admin?: boolean;
+}
+
+interface UserHoursData {
+  totalHours: string;
+  totalSessions: number;
+  totalMilliseconds: number;
+}
+
 interface UserCardProps {
-  user: any; // Using any for now since we know the structure from logs
+  user: UserData;
   onForceCheckout: (userId: string, email: string) => void;
-  onChangePin: (email: string) => void; // Changed to use email only
+  onChangePin: (email: string) => void;
   onDeleteUser: (userId: string, email: string) => void;
   onToggleExpand: (userId: string) => void;
   isExpanded: boolean;
-  userSessions: any[];
-  userHours: any;
+  userSessions: SessionData[];
+  userHours: UserHoursData | null;
   formatDateTime: (dateString: string) => string;
   formatDuration: (milliseconds: number) => string;
   isDeleting: boolean;
@@ -237,7 +261,7 @@ export function UserCard({
               <div className="max-h-64 overflow-y-auto">
                 {userSessions && userSessions.length > 0 ? (
                   <div className="divide-y divide-gray-100">
-                    {userSessions.map((session: any, index: number) => (
+                    {userSessions.map((session: SessionData, index: number) => (
                       <div key={index} className="p-3 hover:bg-gray-50 transition-colors">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">

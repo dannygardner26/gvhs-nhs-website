@@ -19,7 +19,7 @@ const AUTO_LOGOUT_TIMES = [
 
 interface AutoLogoutSchedulerProps {
   enabled?: boolean;
-  onLogoutTriggered?: (result: any) => void;
+  onLogoutTriggered?: (result: Record<string, unknown>) => void;
 }
 
 export function AutoLogoutScheduler({

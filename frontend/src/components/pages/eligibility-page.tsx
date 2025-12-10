@@ -94,9 +94,9 @@ export function EligibilityPage() {
         <Card className="mb-8 border-royal-blue border-2">
           <CardContent className="p-6">
             <p className="text-lg text-gray-700 text-center italic">
-              "The purpose of this chapter shall be to create an enthusiasm for scholarship,
+              &quot;The purpose of this chapter shall be to create an enthusiasm for scholarship,
               to stimulate a desire to render service, to promote worthy leadership, and to
-              encourage the development of character in students of Great Valley High School."
+              encourage the development of character in students of Great Valley High School.&quot;
             </p>
           </CardContent>
         </Card>
@@ -110,7 +110,7 @@ export function EligibilityPage() {
             <ul className="space-y-2 text-amber-900">
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <span><strong>Membership is a privilege, not a right</strong> - It's an invitation to be a candidate for selection, not an application or election</span>
+                <span><strong>Membership is a privilege, not a right</strong> - It&apos;s an invitation to be a candidate for selection, not an application or election</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -202,7 +202,7 @@ export function EligibilityPage() {
                 <ul className="space-y-1 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-royal-blue">1.</span>
-                    <span>Teacher who will speak to your character (ask them first!)</span>
+                    <span>Teacher who will speak to your character (ask them first)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-royal-blue">2.</span>
@@ -235,11 +235,11 @@ export function EligibilityPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>You don't need 4 examples - quality beats quantity</span>
+                    <span>You don&apos;t need 4 examples - quality beats quantity</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Don't rush - submit before the deadline, not at 7:59 AM!</span>
+                    <span>Don&apos;t rush - submit before the deadline, not at 7:59 AM</span>
                   </li>
                 </ul>
               </div>

@@ -115,9 +115,9 @@ export function HomePage() {
             Scholarship • Service • Leadership • Character
           </p>
           <p className="text-gray-600 max-w-3xl mx-auto italic">
-            "The purpose of this chapter shall be to create an enthusiasm for scholarship,
+            &quot;The purpose of this chapter shall be to create an enthusiasm for scholarship,
             to stimulate a desire to render service, to promote worthy leadership, and to
-            encourage the development of character in students of Great Valley High School."
+            encourage the development of character in students of Great Valley High School.&quot;
           </p>
         </section>
 
@@ -417,9 +417,9 @@ export function HomePage() {
           <Card className="bg-royal-blue text-white text-center">
             <CardContent className="py-6 px-8">
               <p className="text-lg font-medium">
-                "Membership in the National Honor Society is both an honor and a responsibility.
+                &quot;Membership in the National Honor Society is both an honor and a responsibility.
                 We are committed to upholding the pillars of Service, Leadership, Scholarship, and Character
-                in everything we do."
+                in everything we do.&quot;
               </p>
             </CardContent>
           </Card>

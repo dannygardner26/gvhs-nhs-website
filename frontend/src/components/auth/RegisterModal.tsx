@@ -131,7 +131,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                 </div>
               </div>
               <p className="text-xs text-gray-500">
-                Create a 6-digit PIN you'll remember - this is NOT your school ID
+                Create a 6-digit PIN you&apos;ll remember - this is NOT your school ID
               </p>
               {formData.userId && formData.userId.length !== 6 && (
                 <p className="text-xs text-amber-600">PIN must be exactly 6 digits</p>
