@@ -109,7 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const response = await fetch('/api/checkin/register-and-checkin', {
+      // Use register-only endpoint (no auto check-in)
+      const response = await fetch('/api/checkin/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
