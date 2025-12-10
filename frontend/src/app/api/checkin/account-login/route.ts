@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
+import { decryptData } from '@/lib/encryption'
 
 // POST /api/checkin/account-login - Login with User ID or email and password, then check in
 export async function POST(request: NextRequest) {
@@ -14,23 +15,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Try to find user by User ID first (if it's a 6-digit number), then by email
+    // Find user by email or encrypted user ID
     let user = null
+    let decryptedUserId = null
     const inputValue = userIdOrEmail.trim().toLowerCase()
 
     // Check if the input looks like a 6-digit User ID
     const is6DigitId = /^\d{6}$/.test(inputValue)
 
     if (is6DigitId) {
-      // Try finding by User ID
-      const { data: userById } = await supabase
+      // Get all users and decrypt their user IDs to find a match
+      const { data: allUsers } = await supabase
         .from('users')
         .select('*')
-        .eq('user_id', inputValue)
-        .single()
 
-      if (userById) {
-        user = userById
+      if (allUsers) {
+        for (const u of allUsers) {
+          try {
+            const decrypted = decryptData(u.user_id)
+            if (decrypted === inputValue) {
+              user = u
+              decryptedUserId = decrypted
+              break
+            }
+          } catch (error) {
+            // Skip users with invalid encrypted data
+            continue
+          }
+        }
       }
     }
 
@@ -44,6 +56,15 @@ export async function POST(request: NextRequest) {
 
       if (userByEmail) {
         user = userByEmail
+        // Decrypt the user ID for use in check-in
+        try {
+          decryptedUserId = decryptData(userByEmail.user_id)
+        } catch (error) {
+          console.error('Failed to decrypt user ID:', error)
+          return NextResponse.json({
+            message: 'Account data corrupted'
+          }, { status: 500 })
+        }
       }
     }
 
@@ -60,37 +81,47 @@ export async function POST(request: NextRequest) {
       }, { status: 401 })
     }
 
-    // Verify password
-    const passwordMatch = await bcrypt.compare(password, user.password_hash)
+    // Decrypt and verify password
+    let decryptedPasswordHash
+    try {
+      decryptedPasswordHash = decryptData(user.password_hash)
+    } catch (error) {
+      console.error('Failed to decrypt password hash:', error)
+      return NextResponse.json({
+        message: 'Account data corrupted'
+      }, { status: 500 })
+    }
+
+    const passwordMatch = await bcrypt.compare(password, decryptedPasswordHash)
     if (!passwordMatch) {
       return NextResponse.json({
         message: 'Invalid User ID/email or password'
       }, { status: 401 })
     }
 
-    // Check if already checked in
+    // Check if already checked in (using decrypted user ID)
     const { data: existingCheckin } = await supabase
       .from('active_checkins')
       .select('*')
-      .eq('user_id', user.user_id)
+      .eq('user_id', decryptedUserId)
       .single()
 
     if (existingCheckin) {
       return NextResponse.json({
         message: 'You are already checked in',
-        userId: user.user_id,
+        userId: decryptedUserId,
         username: user.username,
         isCheckedIn: true,
         checkedInAt: existingCheckin.checked_in_at
       })
     }
 
-    // Check in the user
+    // Check in the user (using decrypted user ID)
     const checkedInAt = new Date().toISOString()
     const { error: checkinError } = await supabase
       .from('active_checkins')
       .insert({
-        user_id: user.user_id,
+        user_id: decryptedUserId,
         username: user.username,
         checked_in_at: checkedInAt
       })
@@ -105,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Successfully logged in and checked in',
-      userId: user.user_id,
+      userId: decryptedUserId,
       username: user.username,
       checkedInAt
     })

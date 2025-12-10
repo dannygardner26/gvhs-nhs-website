@@ -8,9 +8,9 @@ import { Key, ChevronDown, ChevronUp, Trash2, AlertTriangle, Clock } from "lucid
 
 interface UserCardProps {
   user: any; // Using any for now since we know the structure from logs
-  onForceCheckout: (userId: string, username: string) => void;
-  onChangePin: (userId: string, username: string, newPin: string) => void;
-  onDeleteUser: (userId: string, username: string) => void;
+  onForceCheckout: (userId: string, email: string) => void;
+  onChangePin: (email: string) => void; // Changed to use email only
+  onDeleteUser: (userId: string, email: string) => void;
   onToggleExpand: (userId: string) => void;
   isExpanded: boolean;
   userSessions: any[];
@@ -34,8 +34,7 @@ export function UserCard({
   isDeleting
 }: UserCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showChangePinForm, setShowChangePinForm] = useState(false);
-  const [newUserId, setNewUserId] = useState("");
+  const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
 
   // Use user_id field from database (confirmed from debug logs)
   const userId = user.user_id || user.userId;
@@ -45,21 +44,17 @@ export function UserCard({
     setShowDeleteConfirm(!showDeleteConfirm);
   };
 
-  const handleChangePinClick = () => {
-    setShowChangePinForm(!showChangePinForm);
-    setNewUserId("");
+  const handleResetPasswordClick = () => {
+    setShowResetPasswordConfirm(!showResetPasswordConfirm);
   };
 
-  const handleChangePinSave = () => {
-    if (newUserId.trim()) {
-      onChangePin(userId, user.username, newUserId.trim());
-      setShowChangePinForm(false);
-      setNewUserId("");
-    }
+  const handleResetPasswordConfirm = () => {
+    onChangePin(user.email);
+    setShowResetPasswordConfirm(false);
   };
 
   const handleDeleteConfirm = () => {
-    onDeleteUser(userId, user.username);
+    onDeleteUser(userId, user.email);
     setShowDeleteConfirm(false);
   };
 
@@ -68,7 +63,7 @@ export function UserCard({
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h3 className="font-semibold text-lg">{user.username}</h3>
+            <h3 className="font-semibold text-lg">{user.first_name} {user.last_name}</h3>
             {user.isCheckedIn && (
               <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                 Currently in library
@@ -76,7 +71,7 @@ export function UserCard({
             )}
           </div>
           <div className="text-sm text-gray-600 mt-1">
-            <span className="font-medium">First:</span> {user.firstName} | <span className="font-medium">Last:</span> {user.lastName}
+            <span className="font-medium">User ID:</span> {userId} | <span className="font-medium">Email:</span> {user.email || 'No email provided'}
           </div>
           {user.isCheckedIn && user.checkedInAt && (
             <div className="text-xs text-gray-500 mt-1">
@@ -90,7 +85,7 @@ export function UserCard({
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => onForceCheckout(userId, user.username)}
+              onClick={() => onForceCheckout(userId, user.email)}
             >
               Force Checkout
             </Button>
@@ -98,10 +93,10 @@ export function UserCard({
           <Button
             size="sm"
             variant="outline"
-            onClick={handleChangePinClick}
+            onClick={handleResetPasswordClick}
           >
             <Key className="w-4 h-4 mr-1" />
-            Change PIN
+            Reset Password
           </Button>
           <Button
             size="sm"
@@ -128,36 +123,32 @@ export function UserCard({
         </div>
       </div>
 
-      {/* Change PIN Form */}
-      {showChangePinForm && (
+      {/* Reset Password Confirmation */}
+      {showResetPasswordConfirm && (
         <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-          <Label htmlFor={`newPin-${userId}`} className="text-sm">New User ID (PIN)</Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              id={`newPin-${userId}`}
-              type="text"
-              value={newUserId}
-              onChange={(e) => setNewUserId(e.target.value)}
-              placeholder="Enter new User ID"
-              className="flex-1"
-            />
-            <Button size="sm" onClick={handleChangePinSave}>
-              Save
+          <div className="flex items-center gap-2 mb-3">
+            <Key className="w-5 h-5 text-blue-500" />
+            <h4 className="font-semibold text-blue-800">Reset Password</h4>
+          </div>
+          <div className="text-sm text-blue-700 mb-3">
+            <p>This will generate a new random password for <strong>{user.first_name} {user.last_name}</strong></p>
+            <p className="text-xs mt-1">Email: {user.email}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={handleResetPasswordConfirm}
+            >
+              Generate New Password
             </Button>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                setShowChangePinForm(false);
-                setNewUserId("");
-              }}
+              onClick={() => setShowResetPasswordConfirm(false)}
             >
               Cancel
             </Button>
           </div>
-          <p className="text-xs text-gray-600 mt-2">
-            Note: User ID acts as the PIN for check-in authentication
-          </p>
         </div>
       )}
 
@@ -172,7 +163,7 @@ export function UserCard({
             <p className="font-medium">⚠️ WARNING: This action is PERMANENT and cannot be undone!</p>
             <p className="mt-1">This will completely remove:</p>
             <ul className="ml-4 mt-1 list-disc">
-              <li>User account ({user.username})</li>
+              <li>User account ({user.first_name} {user.last_name})</li>
               <li>All check-in/check-out history</li>
               <li>All volunteer session records</li>
               <li>Any opportunity suggestions by this user</li>

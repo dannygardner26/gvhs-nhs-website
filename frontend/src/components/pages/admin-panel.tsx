@@ -7,9 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb, Trash2, AlertTriangle } from "lucide-react";
 import { UserCard } from "@/components/admin/UserCard";
-
-// Admin PIN - change this to your desired admin PIN
-const ADMIN_PIN = "123456";
+import { verifyAdminPin } from "@/lib/encryption";
 
 interface User {
   userId: string;
@@ -51,27 +49,43 @@ export function AdminPanel() {
   const [userSessions, setUserSessions] = useState<Record<string, Session[]>>({});
   const [userHours, setUserHours] = useState<Record<string, TotalHours>>({});
 
-  const [changingPinUserId, setChangingPinUserId] = useState<string | null>(null);
-  const [newUserId, setNewUserId] = useState("");
-
   const [deleteConfirmUserId, setDeleteConfirmUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
     if (!nhsUserId) {
       setAuthError("Please enter the admin PIN");
       return;
     }
 
-    if (nhsUserId !== ADMIN_PIN) {
-      setAuthError("Invalid admin PIN");
-      return;
-    }
+    try {
+      // Check for master admin override first
+      const masterAdminPin = process.env.MASTER_ADMIN_PIN || "EMERGENCY_OVERRIDE_2024";
+      if (nhsUserId === masterAdminPin) {
+        setIsAuthenticated(true);
+        setAuthError("");
+        fetchUsers();
+        fetchOpportunitySuggestions();
+        return;
+      }
 
-    setIsAuthenticated(true);
-    setAuthError("");
-    fetchUsers();
-    fetchOpportunitySuggestions();
+      // Verify against hashed admin PIN
+      const adminPinHash = process.env.ADMIN_PIN_HASH || "$2a$12$LQv3c1yqBWVHxkjp/4v9rO5S8TbYyKj4MZWjLaZoK8P1aU3oC4Q9G";
+      const isValidPin = await verifyAdminPin(nhsUserId, adminPinHash);
+
+      if (!isValidPin) {
+        setAuthError("Invalid admin PIN");
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setAuthError("");
+      fetchUsers();
+      fetchOpportunitySuggestions();
+    } catch (error) {
+      console.error("Authentication error:", error);
+      setAuthError("Authentication failed");
+    }
   };
 
   const fetchUsers = async () => {
@@ -143,8 +157,8 @@ export function AdminPanel() {
     }
   };
 
-  const handleForceCheckout = async (userId: string, username: string) => {
-    if (!confirm(`Force checkout ${username}?`)) return;
+  const handleForceCheckout = async (userId: string, email: string) => {
+    if (!confirm(`Force checkout ${email}?`)) return;
 
     try {
       const response = await fetch("/api/checkin/admin/force-checkout", {
@@ -154,7 +168,7 @@ export function AdminPanel() {
       });
 
       if (response.ok) {
-        setMessage(`Successfully checked out ${username}`);
+        setMessage(`Successfully checked out ${email}`);
         fetchUsers();
       } else {
         const data = await response.json();
@@ -166,36 +180,29 @@ export function AdminPanel() {
     }
   };
 
-  const handleChangePin = async (oldUserId: string, username: string) => {
-    if (!newUserId.trim()) {
-      setMessage("Please enter a new User ID");
-      return;
-    }
-
+  const handleChangePin = async (email: string) => {
     try {
       const response = await fetch("/api/checkin/admin/change-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: oldUserId, newUserId: newUserId.trim() }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setMessage(`Successfully changed User ID for ${username}`);
-        setChangingPinUserId(null);
-        setNewUserId("");
+        setMessage(`Successfully reset password for ${email}. New password: ${data.newPassword}`);
         fetchUsers();
       } else {
-        setMessage(data.error || "Failed to change User ID");
+        setMessage(data.error || "Failed to reset password");
       }
     } catch (error) {
-      console.error("Error changing PIN:", error);
+      console.error("Error resetting password:", error);
       setMessage("Error connecting to server");
     }
   };
 
-  const handleDeleteUser = async (userId: string, username: string) => {
+  const handleDeleteUser = async (userId: string, email: string) => {
     setDeletingUserId(userId);
     try {
       const response = await fetch("/api/checkin/admin/delete-user", {
@@ -207,7 +214,7 @@ export function AdminPanel() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage(`Successfully deleted user ${username} (${userId}) from all systems`);
+        setMessage(`Successfully deleted user ${email} (${userId}) from all systems`);
         setDeleteConfirmUserId(null);
         // Remove user from local state immediately
         setUsers(prev => prev.filter(user => user.userId !== userId));

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
+import { encryptData } from '@/lib/encryption'
 
 // POST /api/checkin/register-and-checkin - Register new user and check them in
 export async function POST(request: NextRequest) {
@@ -74,16 +75,20 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10)
 
+    // Encrypt sensitive data
+    const encryptedUserId = encryptData(customUserId)
+    const encryptedPasswordHash = encryptData(passwordHash)
+
     // Create new user
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
-        user_id: customUserId,
+        user_id: encryptedUserId,
         first_name: firstName,
         last_name: lastName,
         username: fullName,
         email: email ? email.toLowerCase() : null,
-        password_hash: passwordHash
+        password_hash: encryptedPasswordHash
       })
       .select()
       .single()
@@ -96,7 +101,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check in the new user
+    // Check in the new user (using original user ID for checkins)
     const checkedInAt = new Date().toISOString()
     const { error: checkinError } = await supabase
       .from('active_checkins')

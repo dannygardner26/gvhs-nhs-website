@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { decryptData, encryptData, generateRandomPassword } from '@/lib/encryption'
+import bcrypt from 'bcryptjs'
 
-// POST /api/checkin/admin/change-pin - Change user's PIN/userId (admin only)
+// POST /api/checkin/admin/change-pin - Reset user password (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const { userId, newUserId } = await request.json()
+    const { email } = await request.json()
 
-    if (!userId || !newUserId) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Current User ID and new User ID are required' },
+        { error: 'Email is required' },
         { status: 400 }
       )
     }
 
-    // Check if user exists
+    // Find user by email (since admin only sees masked IDs)
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('user_id', userId)
+      .eq('email', email.toLowerCase())
       .single()
 
     if (userError || !user) {
@@ -27,67 +29,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if new userId is already taken (and it's not the same user)
-    if (userId !== newUserId) {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', newUserId)
-        .single()
+    // Generate new random password
+    const newPassword = generateRandomPassword()
+    const newPasswordHash = await bcrypt.hash(newPassword, 10)
+    const encryptedPasswordHash = encryptData(newPasswordHash)
 
-      if (existingUser) {
-        return NextResponse.json(
-          { error: 'New User ID is already taken' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Update user ID
+    // Update user's password
     const { error: updateError } = await supabase
       .from('users')
-      .update({ user_id: newUserId })
-      .eq('user_id', userId)
+      .update({ password_hash: encryptedPasswordHash })
+      .eq('id', user.id)
 
     if (updateError) {
-      console.error('Error updating user ID:', updateError)
+      console.error('Error updating user password:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update user ID' },
+        { error: 'Failed to reset password' },
         { status: 500 }
       )
     }
 
-    // Update session history
-    const { error: historyUpdateError } = await supabase
-      .from('session_history')
-      .update({ user_id: newUserId })
-      .eq('user_id', userId)
-
-    if (historyUpdateError) {
-      console.error('Error updating session history:', historyUpdateError)
-    }
-
-    // Update active checkins if user is currently checked in
-    const { error: activeUpdateError } = await supabase
-      .from('active_checkins')
-      .update({ user_id: newUserId })
-      .eq('user_id', userId)
-
-    if (activeUpdateError) {
-      console.error('Error updating active checkins:', activeUpdateError)
+    // Get decrypted user ID for response
+    let decryptedUserId
+    try {
+      decryptedUserId = decryptData(user.user_id)
+    } catch (error) {
+      console.error('Failed to decrypt user ID:', error)
+      decryptedUserId = '***ERROR***'
     }
 
     return NextResponse.json({
-      message: 'User ID/PIN successfully updated',
-      oldUserId: userId,
-      newUserId,
-      username: user.username
+      message: 'User password successfully reset',
+      email: user.email,
+      userId: decryptedUserId,
+      newPassword: newPassword
     })
 
   } catch (error) {
-    console.error('Error changing PIN:', error)
+    console.error('Error resetting password:', error)
     return NextResponse.json(
-      { error: 'Failed to change PIN' },
+      { error: 'Failed to reset password' },
       { status: 500 }
     )
   }
