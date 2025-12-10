@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { UserCheck, UserX, Users, RefreshCw, Mail, Key } from "lucide-react";
 
 export function CheckinPageSimple() {
-  const [mode, setMode] = useState<"select" | "existing" | "account" | "new">("select"); // select mode, existing user (ID), account login, or new user
+  const [mode, setMode] = useState<"select" | "existing" | "account" | "new" | "registered">("select"); // select mode, existing user (ID), account login, new user, or just registered
   const [userId, setUserId] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -204,7 +204,7 @@ export function CheckinPageSimple() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/checkin/register-and-checkin", {
+      const response = await fetch("/api/checkin/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -222,10 +222,9 @@ export function CheckinPageSimple() {
 
       if (response.ok) {
         setUserId(data.userId);
-        setIsCheckedIn(true);
-        localStorage.setItem("checkin_userId", data.userId);
-        setMessage(`Registration successful! Your User ID is ${data.userId}. We'll remember you for next time!`);
-        fetchCurrentCount();
+        // Don't auto check-in, just show success and prompt to check in
+        setMode("registered");
+        setMessage("");
       } else {
         setMessage(data.message || "Error creating user. Please try again.");
       }
@@ -321,7 +320,53 @@ export function CheckinPageSimple() {
               <div className="text-gray-600">Students currently in library</div>
             </div>
 
-{mode === "select" ? (
+{mode === "registered" ? (
+              <div className="space-y-4">
+                <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+                  <div className="text-green-600 text-4xl mb-3">✓</div>
+                  <h3 className="text-xl font-semibold text-green-800 mb-2">Registration Successful!</h3>
+                  <p className="text-green-700 mb-4">Your account has been created.</p>
+                  <div className="bg-white p-4 rounded-lg border border-green-300">
+                    <p className="text-sm text-gray-600 mb-1">Your User ID:</p>
+                    <p className="text-3xl font-mono font-bold text-royal-blue tracking-wider">{userId}</p>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-4">
+                    Remember this ID! You&apos;ll use it to check in each time you visit the library.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setMode("existing");
+                    setFirstName("");
+                    setLastName("");
+                    setEmail("");
+                    setPassword("");
+                    setMessage("");
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  Check In Now
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode("select");
+                    setUserId("");
+                    setFirstName("");
+                    setLastName("");
+                    setEmail("");
+                    setPassword("");
+                    setMessage("");
+                  }}
+                  className="w-full"
+                >
+                  Back to Home
+                </Button>
+              </div>
+            ) : mode === "select" ? (
               <div className="space-y-4">
                 <div className="text-center mb-6">
                   <p className="text-gray-600">How would you like to check in?</p>
@@ -612,32 +657,14 @@ export function CheckinPageSimple() {
                   </div>
                 </div>
 
-                {!isCheckedIn ? (
-                  <Button
-                    onClick={handleNewUserRegistration}
-                    disabled={loading}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    {loading ? "Creating account and checking in..." : "Register & Check In"}
-                  </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-green-700 font-medium">Successfully checked in!</p>
-                      <p className="text-sm text-green-600 mt-1">Your User ID: {userId}</p>
-                    </div>
-                    <Button
-                      onClick={handleCheckout}
-                      disabled={loading}
-                      variant="destructive"
-                      className="w-full"
-                    >
-                      <UserX className="w-4 h-4 mr-2" />
-                      {loading ? "Checking out..." : "Check Out"}
-                    </Button>
-                  </div>
-                )}
+                <Button
+                  onClick={handleNewUserRegistration}
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  {loading ? "Creating account..." : "Create Account"}
+                </Button>
 
                 <Button
                   variant="outline"
