@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb, Trash2, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff } from "lucide-react";
 import { UserCard } from "@/components/admin/UserCard";
 import { ActiveUsersPanel } from "@/components/admin/ActiveUsersPanel";
 
@@ -50,7 +50,7 @@ export function AdminPanel() {
   const [userSessions, setUserSessions] = useState<Record<string, Session[]>>({});
   const [userHours, setUserHours] = useState<Record<string, TotalHours>>({});
 
-  const [deleteConfirmUserId, setDeleteConfirmUserId] = useState<string | null>(null);
+  const [_deleteConfirmUserId, setDeleteConfirmUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const handleAuth = async () => {

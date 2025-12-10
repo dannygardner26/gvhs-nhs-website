@@ -1,33 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Users, RefreshCw, UserPlus, Key } from "lucide-react";
-
-interface TutorRegistrationData {
-  name: string;
-  email: string;
-  phone: string;
-  grade: string;
-  subjects: string[];
-  experience: string;
-  hasExistingId: boolean;
-  existingId: string;
-  customPasscode: string;
-  availability: {
-    monday: boolean;
-    tuesday: boolean;
-    wednesday: boolean;
-    thursday: boolean;
-    friday: boolean;
-  };
-  additionalNotes: string;
-}
+import { BookOpen } from "lucide-react";
 
 export function TutoringPageSimple() {
 

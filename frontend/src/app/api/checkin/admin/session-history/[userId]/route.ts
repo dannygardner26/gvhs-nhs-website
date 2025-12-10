@@ -3,11 +3,11 @@ import { supabase } from '@/lib/supabase'
 
 // GET /api/checkin/admin/session-history/[userId] - Get session history for a specific user
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { userId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params
+    const { userId } = await params
 
     const { data: sessions, error } = await supabase
       .from('session_history')

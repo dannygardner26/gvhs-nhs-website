@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
               decryptedUserId = decrypted
               break
             }
-          } catch (error) {
+          } catch {
             // Skip users with invalid encrypted data
             continue
           }

@@ -4,7 +4,7 @@ import React, { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { Lock, LogIn, Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: ReactNode;

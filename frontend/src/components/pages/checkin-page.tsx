@@ -35,6 +35,7 @@ export function CheckinPage() {
     const interval = setInterval(checkAutoLogout, 60000); // Check every minute
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAutoLogout = () => {
@@ -145,7 +146,7 @@ export function CheckinPage() {
         const data = await response.json();
         setMessage(data.message || "Error checking in");
       }
-    } catch (error) {
+    } catch {
       setMessage("Error connecting to server");
     }
     setLoading(false);
@@ -172,7 +173,7 @@ export function CheckinPage() {
         const data = await response.json();
         setMessage(data.message || "Error checking out");
       }
-    } catch (error) {
+    } catch {
       setMessage("Error connecting to server");
     }
     setLoading(false);

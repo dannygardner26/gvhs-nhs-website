@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, BookOpen, Star, Clock, Mail, Settings, Award, BarChart3, Edit, Save, X, CheckCircle, GraduationCap } from "lucide-react";
+import { User, BookOpen, Clock, Settings, Award, BarChart3, Edit, Save, X, CheckCircle, GraduationCap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
@@ -48,7 +48,7 @@ const SUBJECT_CATEGORIES = {
 };
 
 // Flatten for backward compatibility
-const AVAILABLE_SUBJECTS = Object.values(SUBJECT_CATEGORIES).flat();
+const _AVAILABLE_SUBJECTS = Object.values(SUBJECT_CATEGORIES).flat();
 
 export function TutorProfilePage() {
   const { user, updateUser } = useAuth();
@@ -85,6 +85,7 @@ export function TutorProfilePage() {
     if (user?.userId) {
       loadTutorStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId]);
 
   const loadTutorStats = async () => {

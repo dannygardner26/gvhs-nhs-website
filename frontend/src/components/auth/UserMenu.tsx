@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { User, LogOut, Settings, BookOpen, Award } from 'lucide-react';
+import { User, LogOut, BookOpen, Award } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 

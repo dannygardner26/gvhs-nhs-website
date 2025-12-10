@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 // POST /api/checkin/logout-all - Force logout all users
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Get all active check-ins to create session records
     const { data: activeCheckins, error: fetchError } = await supabase

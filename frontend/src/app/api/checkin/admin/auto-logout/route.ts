@@ -17,7 +17,7 @@ const AUTO_LOGOUT_TIMES = [
 ]
 
 // POST /api/checkin/admin/auto-logout - Automatically log out all users at scheduled times
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('Auto-logout triggered...')
 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/checkin/admin/auto-logout - Get auto-logout schedule information
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get current time in EST
     const now = new Date()

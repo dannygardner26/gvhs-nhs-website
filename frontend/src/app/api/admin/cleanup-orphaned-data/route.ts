@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 // POST /api/admin/cleanup-orphaned-data - Clean up orphaned records where user no longer exists
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('Starting cleanup of orphaned data...')
 

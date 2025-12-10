@@ -3,11 +3,11 @@ import { supabase } from '@/lib/supabase'
 
 // GET /api/checkin/status/[userId] - Get user status
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { userId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params
+    const { userId } = await params
 
     const { data: activeCheckin } = await supabase
       .from('active_checkins')

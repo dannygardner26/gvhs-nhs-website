@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { decryptData, maskUserId } from '@/lib/encryption'
 
 // GET /api/checkin/admin/users - Get all users (admin only)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get users from the main users table to access encrypted data
     const { data: users, error } = await supabase

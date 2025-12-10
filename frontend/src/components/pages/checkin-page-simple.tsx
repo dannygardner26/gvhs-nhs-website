@@ -51,6 +51,7 @@ export function CheckinPageSimple() {
     }, 60000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCheckedIn]);
 
   // Debounced user ID availability check for new users

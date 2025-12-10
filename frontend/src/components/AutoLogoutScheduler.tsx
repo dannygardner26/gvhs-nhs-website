@@ -76,6 +76,7 @@ export function AutoLogoutScheduler({
     const interval = setInterval(updateTime, 60000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, lastLogoutCheck, isProcessing]);
 
   const triggerAutoLogout = async (time: string) => {

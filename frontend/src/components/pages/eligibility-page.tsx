@@ -1,9 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, BookOpen, Users, Heart, Award, Calendar, Mail } from "lucide-react";
-import Link from "next/link";
+import { CheckCircle, BookOpen, Users, Heart, Award, Calendar } from "lucide-react";
 
 export function EligibilityPage() {
   const pillars = [
