@@ -69,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      // Account-based login with password (always required)
-      const response = await fetch('/api/checkin/account-login', {
+      // Account-based login with password (no auto check-in)
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userIdOrEmail, password }),
@@ -109,8 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      // Use register-only endpoint (no auto check-in)
-      const response = await fetch('/api/checkin/register', {
+      // Register new user (no auto check-in)
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

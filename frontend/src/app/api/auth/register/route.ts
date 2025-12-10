@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { encryptData } from '@/lib/encryption'
 
-// POST /api/checkin/register - Register new user (without auto check-in)
+// POST /api/auth/register - Register new user (no auto check-in)
 export async function POST(request: NextRequest) {
   try {
     const { firstName, lastName, customUserId, email, password } = await request.json()
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const encryptedUserId = encryptData(customUserId)
     const encryptedPasswordHash = encryptData(passwordHash)
 
-    // Create new user (without checking in)
+    // Create new user
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: 'Registration successful! You can now check in using your User ID.',
+      message: 'Registration successful!',
       id: newUser.id,
       userId: customUserId,
       firstName: firstName,

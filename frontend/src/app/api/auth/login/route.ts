@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { decryptData } from '@/lib/encryption'
 
-// POST /api/checkin/account-login - Login with User ID or email and password, then check in
+// POST /api/auth/login - Login with User ID or email and password (no auto check-in)
 export async function POST(request: NextRequest) {
   try {
     const { userIdOrEmail, password } = await request.json()
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
       if (userByEmail) {
         user = userByEmail
-        // Decrypt the user ID for use in check-in
+        // Decrypt the user ID
         try {
           decryptedUserId = decryptData(userByEmail.user_id)
         } catch (error) {
@@ -99,51 +99,19 @@ export async function POST(request: NextRequest) {
       }, { status: 401 })
     }
 
-    // Check if already checked in (using decrypted user ID)
-    const { data: existingCheckin } = await supabase
-      .from('active_checkins')
-      .select('*')
-      .eq('user_id', decryptedUserId)
-      .single()
-
-    if (existingCheckin) {
-      return NextResponse.json({
-        message: 'You are already checked in',
-        userId: decryptedUserId,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        isCheckedIn: true,
-        checkedInAt: existingCheckin.checked_in_at
-      })
-    }
-
-    // Check in the user (using decrypted user ID)
-    const checkedInAt = new Date().toISOString()
-    const { error: checkinError } = await supabase
-      .from('active_checkins')
-      .insert({
-        user_id: decryptedUserId,
-        checked_in_at: checkedInAt
-      })
-
-    if (checkinError) {
-      console.error('Error checking in user:', checkinError)
-      return NextResponse.json(
-        { error: 'Failed to check in' },
-        { status: 500 }
-      )
-    }
-
+    // Return user info (no check-in)
     return NextResponse.json({
-      message: 'Successfully logged in and checked in',
+      message: 'Login successful',
+      id: user.id,
       userId: decryptedUserId,
       firstName: user.first_name,
       lastName: user.last_name,
-      checkedInAt
+      email: user.email,
+      username: `${user.first_name} ${user.last_name}`.trim()
     })
 
   } catch (error) {
-    console.error('Error in account-login API:', error)
+    console.error('Error in auth/login API:', error)
     return NextResponse.json(
       { error: 'Failed to login' },
       { status: 500 }
