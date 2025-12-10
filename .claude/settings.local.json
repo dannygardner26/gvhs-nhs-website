@@ -20,7 +20,14 @@
       "Bash(node:*)",
       "Bash(git merge:*)",
       "Bash(supabase:*)",
-      "Bash(winget install:*)"
+      "Bash(winget install:*)",
+      "Bash(git pull:*)",
+      "Bash(tasklist:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(PORT=3010 npm run dev)",
+      "Bash(del \"C:\\Users\\danny\\package-lock.json\")",
+      "Bash(PORT=3011 npm run dev)"
     ],
     "deny": [],
     "ask": []

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
+import { Shield, Users, Clock, LogOut, Key, ChevronDown, ChevronUp, Lightbulb, Trash2, AlertTriangle } from "lucide-react";
+import { UserCard } from "@/components/admin/UserCard";
 
 // Admin PIN - change this to your desired admin PIN
 const ADMIN_PIN = "123456";
@@ -52,6 +53,9 @@ export function AdminPanel() {
 
   const [changingPinUserId, setChangingPinUserId] = useState<string | null>(null);
   const [newUserId, setNewUserId] = useState("");
+
+  const [deleteConfirmUserId, setDeleteConfirmUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const handleAuth = () => {
     if (!nhsUserId) {
@@ -189,6 +193,46 @@ export function AdminPanel() {
       console.error("Error changing PIN:", error);
       setMessage("Error connecting to server");
     }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    setDeletingUserId(userId);
+    try {
+      const response = await fetch("/api/checkin/admin/delete-user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(`Successfully deleted user ${username} (${userId}) from all systems`);
+        setDeleteConfirmUserId(null);
+        // Remove user from local state immediately
+        setUsers(prev => prev.filter(user => user.userId !== userId));
+        // Clear any expanded data for this user
+        if (expandedUserId === userId) {
+          setExpandedUserId(null);
+        }
+        setUserSessions(prev => {
+          const newSessions = { ...prev };
+          delete newSessions[userId];
+          return newSessions;
+        });
+        setUserHours(prev => {
+          const newHours = { ...prev };
+          delete newHours[userId];
+          return newHours;
+        });
+      } else {
+        setMessage(data.error || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      setMessage("Error connecting to server");
+    }
+    setDeletingUserId(null);
   };
 
   const formatDuration = (milliseconds: number) => {
@@ -357,157 +401,25 @@ export function AdminPanel() {
               <div className="text-center py-8 text-gray-500">No users registered yet</div>
             ) : (
               <div className="space-y-2">
-                {users.map((user) => (
-                  <div key={user.userId} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-semibold text-lg">{user.username}</h3>
-                          {user.isCheckedIn && (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                              Currently in library
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          <span className="font-medium">First:</span> {user.firstName} | <span className="font-medium">Last:</span> {user.lastName}
-                        </div>
-                        {user.isCheckedIn && user.checkedInAt && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            Checked in: {formatDateTime(user.checkedInAt)}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2">
-                        {user.isCheckedIn && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleForceCheckout(user.userId, user.username)}
-                          >
-                            Force Checkout
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setChangingPinUserId(changingPinUserId === user.userId ? null : user.userId);
-                            setNewUserId("");
-                          }}
-                        >
-                          <Key className="w-4 h-4 mr-1" />
-                          Change PIN
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleUserExpand(user.userId)}
-                        >
-                          <Clock className="w-4 h-4 mr-1" />
-                          Hours
-                          {expandedUserId === user.userId ? (
-                            <ChevronUp className="w-4 h-4 ml-1" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 ml-1" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Change PIN Form */}
-                    {changingPinUserId === user.userId && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <Label htmlFor={`newPin-${user.userId}`} className="text-sm">New User ID (PIN)</Label>
-                        <div className="flex gap-2 mt-1">
-                          <Input
-                            id={`newPin-${user.userId}`}
-                            type="text"
-                            value={newUserId}
-                            onChange={(e) => setNewUserId(e.target.value)}
-                            placeholder="Enter new User ID"
-                            className="flex-1"
-                          />
-                          <Button
-                            size="sm"
-                            onClick={() => handleChangePin(user.userId, user.username)}
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setChangingPinUserId(null);
-                              setNewUserId("");
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-2">
-                          Note: User ID acts as the PIN for check-in authentication
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Volunteer Hours & Session History */}
-                    {expandedUserId === user.userId && (
-                      <div className="mt-4 p-3 bg-gray-50 rounded">
-                        {userHours[user.userId] && (
-                          <div className="mb-3">
-                            <h4 className="font-semibold text-sm mb-2">Total Volunteer Time</h4>
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="text-gray-600">Total Hours:</span>
-                                <div className="font-bold text-lg text-blue-600">
-                                  {userHours[user.userId].totalHours}
-                                </div>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Total Sessions:</span>
-                                <div className="font-bold text-lg">
-                                  {userHours[user.userId].totalSessions}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {userSessions[user.userId] && (
-                          <div>
-                            <h4 className="font-semibold text-sm mb-2">Session History</h4>
-                            {userSessions[user.userId].length === 0 ? (
-                              <p className="text-sm text-gray-500">No completed sessions yet</p>
-                            ) : (
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
-                                {userSessions[user.userId].map((session, idx) => (
-                                  <div key={idx} className="text-xs p-2 bg-white rounded border">
-                                    <div className="flex justify-between">
-                                      <span className="font-medium">
-                                        {formatDateTime(session.checkedInAt)}
-                                      </span>
-                                      <span className="text-blue-600 font-semibold">
-                                        {formatDuration(session.duration)}
-                                      </span>
-                                    </div>
-                                    <div className="text-gray-500 mt-1">
-                                      Out: {formatDateTime(session.checkedOutAt)}
-                                      {session.forcedByAdmin && (
-                                        <span className="ml-2 text-orange-600">(Admin forced)</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {users.map((user) => {
+                  const userId = user.user_id || user.userId; // Use database field name
+                  return (
+                    <UserCard
+                      key={userId}
+                      user={user}
+                      onForceCheckout={handleForceCheckout}
+                      onChangePin={handleChangePin}
+                      onDeleteUser={handleDeleteUser}
+                      onToggleExpand={toggleUserExpand}
+                      isExpanded={expandedUserId === userId}
+                      userSessions={userSessions[userId] || []}
+                      userHours={userHours[userId]}
+                      formatDateTime={formatDateTime}
+                      formatDuration={formatDuration}
+                      isDeleting={deletingUserId === userId}
+                    />
+                  );
+                })}
               </div>
             )}
           </CardContent>

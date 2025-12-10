@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,10 +38,9 @@ const opportunities: VolunteerOpportunity[] = [
     category: "community",
     spots: 8,
     requirements: ["Background check required", "Training session attendance", "Reliable transportation"],
-    contactType: "signup",
+    contactType: "email",
     contactInfo: "pmorabito@gvsd.org",
-    contactLabel: "Contact Mrs. Morabito",
-    signupLink: "/volunteering/school-visits"
+    contactLabel: "Contact Mrs. Morabito"
   },
   {
     id: "kids-in-motion",
@@ -84,7 +84,7 @@ const opportunities: VolunteerOpportunity[] = [
     spots: 10,
     requirements: ["Technology proficiency", "Patience with seniors", "Clear communication skills"],
     contactType: "email",
-    contactInfo: "nhsadvisor@gvsd.org",
+    contactInfo: "pmorabito@gvsd.org",
     contactLabel: "Contact NHS Advisor"
   },
   {
@@ -98,7 +98,7 @@ const opportunities: VolunteerOpportunity[] = [
     category: "social-media",
     requirements: ["Creative skills", "Social media experience preferred", "Photo/video editing knowledge helpful"],
     contactType: "email",
-    contactInfo: "nhsadvisor@gvsd.org",
+    contactInfo: "pmorabito@gvsd.org",
     contactLabel: "Contact NHS Advisor"
   },
   {
@@ -112,16 +112,16 @@ const opportunities: VolunteerOpportunity[] = [
     category: "tutoring",
     spots: 15,
     requirements: ["GPA 3.5 or higher", "Subject area expertise", "Patient teaching attitude"],
-    contactType: "signup",
-    signupLink: "/tutor/register",
-    contactLabel: "Register as Tutor"
+    contactType: "email",
+    contactInfo: "pmorabito@gvsd.org",
+    contactLabel: "Contact NHS Advisor"
   }
 ];
 
 export function VolunteeringPage() {
+  const { user, isAuthenticated } = useAuth();
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [suggestionForm, setSuggestionForm] = useState({
-    nhsUserId: "",
     opportunityTitle: "",
     description: "",
     organizationName: "",
@@ -133,13 +133,13 @@ export function VolunteeringPage() {
   const [formMessage, setFormMessage] = useState("");
 
   const handleSuggestionSubmit = async () => {
-    if (!suggestionForm.nhsUserId || !suggestionForm.opportunityTitle || !suggestionForm.description) {
-      setFormMessage("Please fill in the required fields (NHS User ID, opportunity title, and description).");
+    if (!isAuthenticated) {
+      setFormMessage("You must be logged in to suggest opportunities.");
       return;
     }
 
-    if (!/^\d{6}$/.test(suggestionForm.nhsUserId)) {
-      setFormMessage("NHS User ID must be exactly 6 digits.");
+    if (!suggestionForm.opportunityTitle || !suggestionForm.description) {
+      setFormMessage("Please fill in the required fields (opportunity title and description).");
       return;
     }
 
@@ -150,13 +150,16 @@ export function VolunteeringPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(suggestionForm),
+        body: JSON.stringify({
+          ...suggestionForm,
+          nhsUserId: user?.userId,
+          submittedBy: user?.username || `${user?.firstName} ${user?.lastName}`.trim()
+        }),
       });
 
       if (response.ok) {
         setFormMessage("Thank you! Your suggestion has been submitted and will be reviewed by the NHS leadership.");
         setSuggestionForm({
-          nhsUserId: "",
           opportunityTitle: "",
           description: "",
           organizationName: "",
@@ -304,7 +307,7 @@ export function VolunteeringPage() {
                     </div>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(opportunity.category)}`}>
-                    {opportunity.category.replace('-', ' ')}
+                    {opportunity.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </span>
                 </div>
               </CardHeader>
@@ -370,13 +373,24 @@ export function VolunteeringPage() {
                   We're always looking for new ways to serve our community. If you have an idea for a volunteer opportunity
                   or know of an organization that could use our help, let us know!
                 </p>
-                <Button
-                  onClick={() => setShowSuggestionForm(true)}
-                  variant="outline"
-                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                >
-                  Suggest New Opportunity
-                </Button>
+                {isAuthenticated ? (
+                  <Button
+                    onClick={() => setShowSuggestionForm(true)}
+                    variant="outline"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    Suggest New Opportunity
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-amber-700 font-medium">
+                      Please log in to suggest new volunteer opportunities
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Use the Login button in the top navigation to access this feature
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -384,23 +398,22 @@ export function VolunteeringPage() {
                   Suggest a New Volunteer Opportunity
                 </h3>
                 <div className="max-w-2xl mx-auto space-y-4">
-                  <div>
-                    <Label htmlFor="nhsUserId">Your NHS User ID *</Label>
-                    <Input
-                      id="nhsUserId"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={6}
-                      value={suggestionForm.nhsUserId}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        setSuggestionForm(prev => ({ ...prev, nhsUserId: val }));
-                      }}
-                      placeholder="Enter your 6-digit ID"
-                      className="mt-1 text-center tracking-widest font-mono"
-                    />
-                  </div>
+                  {/* User Info Display */}
+                  {isAuthenticated && user ? (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-blue-900 mb-2">Submitting as:</h4>
+                      <div className="text-sm text-blue-800">
+                        <p><strong>Name:</strong> {user.username || `${user.firstName} ${user.lastName}`.trim()}</p>
+                        <p><strong>NHS ID:</strong> {user.userId}</p>
+                        {user.email && <p><strong>Email:</strong> {user.email}</p>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                      <p className="text-amber-800 font-medium">Please log in to suggest volunteer opportunities.</p>
+                      <p className="text-amber-700 text-sm mt-1">You need to be authenticated to submit suggestions.</p>
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="opportunityTitle">Opportunity Title *</Label>

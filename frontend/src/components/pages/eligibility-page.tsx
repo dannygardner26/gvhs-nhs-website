@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, BookOpen, Users, Heart, Award, Calendar, ExternalLink, Mail } from "lucide-react";
+import { CheckCircle, BookOpen, Users, Heart, Award, Calendar, Mail } from "lucide-react";
 import Link from "next/link";
 
 export function EligibilityPage() {
@@ -216,10 +216,6 @@ export function EligibilityPage() {
                     <span className="text-royal-blue">4.</span>
                     <span>Examples of leadership in school & local community</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-royal-blue">5.</span>
-                    <span>Recognitions and awards (not honor roll)</span>
-                  </li>
                 </ul>
               </div>
               <div>
@@ -251,34 +247,6 @@ export function EligibilityPage() {
           </CardContent>
         </Card>
 
-        {/* CTA Section */}
-        <Card className="bg-royal-blue text-white">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-bold mb-4">Ready to Apply?</h3>
-            <p className="mb-6 text-blue-100">
-              Access the Candidate Information Form through the link below.
-              Remember: the form closes September 16th at 8:00 AM!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://forms.office.com/r/yzwUrgKkdX"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="bg-white text-royal-blue hover:bg-blue-50">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open Application Form
-                </Button>
-              </a>
-              <a href="mailto:pmorabito@gvsd.org">
-                <Button variant="outline" className="border-white text-white hover:bg-blue-700">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Contact Dr. Morabito
-                </Button>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Contact */}
         <div className="text-center mt-8 text-gray-600">

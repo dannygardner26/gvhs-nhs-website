@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!email || !password) {
+    if (!password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Password is required' },
         { status: 400 }
       )
     }
@@ -28,17 +28,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if email is already taken
-    const { data: existingEmail } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .single()
+    // Check if email is already taken (only if email provided)
+    if (email) {
+      const { data: existingEmail } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .single()
 
-    if (existingEmail) {
-      return NextResponse.json({
-        message: 'An account with this email already exists. Please use a different email or login with your existing account.'
-      }, { status: 400 })
+      if (existingEmail) {
+        return NextResponse.json({
+          message: 'An account with this email already exists. Please use a different email or login with your existing account.'
+        }, { status: 400 })
+      }
     }
 
     const fullName = `${firstName} ${lastName}`
@@ -80,7 +82,7 @@ export async function POST(request: NextRequest) {
         first_name: firstName,
         last_name: lastName,
         username: fullName,
-        email: email.toLowerCase(),
+        email: email ? email.toLowerCase() : null,
         password_hash: passwordHash
       })
       .select()
@@ -114,8 +116,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Successfully registered and checked in',
+      id: newUser.id,
       userId: customUserId,
+      firstName: firstName,
+      lastName: lastName,
       username: fullName,
+      email: email,
       checkedInAt
     })
 
