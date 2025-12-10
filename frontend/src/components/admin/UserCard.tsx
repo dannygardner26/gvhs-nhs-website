@@ -59,7 +59,7 @@ export function UserCard({
   const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
 
   // Use user_id field from database (confirmed from debug logs)
-  const userId = user.user_id || user.userId;
+  const userId = user.user_id || user.userId || '';
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();

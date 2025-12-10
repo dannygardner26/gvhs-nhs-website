@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+interface TableInfo {
+  count: number;
+  sampleData: Record<string, unknown> | null;
+  columns: string[];
+}
+
+interface DebugInfo {
+  tables: Record<string, TableInfo>;
+  errors: string[];
+}
+
 // GET /api/admin/debug-database - Show actual database structure and sample data
 export async function GET(_request: NextRequest) {
   try {
     console.log('Debugging database structure...')
 
-    const debug: Record<string, unknown> = {
+    const debug: DebugInfo = {
       tables: {},
       errors: []
     }

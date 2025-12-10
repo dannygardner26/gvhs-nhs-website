@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+interface CleanupResults {
+  before: Record<string, number>;
+  after: Record<string, number>;
+  deleted: Record<string, number>;
+  errors: string[];
+}
+
 // POST /api/admin/cleanup-orphaned-data - Clean up orphaned records where user no longer exists
 export async function POST(_request: NextRequest) {
   try {
     console.log('Starting cleanup of orphaned data...')
 
-    const cleanupResults: Record<string, unknown> = {
+    const cleanupResults: CleanupResults = {
       before: {},
       after: {},
       deleted: {},

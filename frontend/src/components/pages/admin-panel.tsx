@@ -11,20 +11,29 @@ import { ActiveUsersPanel } from "@/components/admin/ActiveUsersPanel";
 
 interface User {
   userId: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  isCheckedIn: boolean;
-  checkedInAt: string | null;
-  createdAt: string;
+  user_id?: string;
+  real_user_id?: string;
+  firstName?: string;
+  lastName?: string;
+  first_name: string;
+  last_name: string;
+  username?: string;
+  email: string;
+  isCheckedIn?: boolean;
+  checkedInAt?: string;
+  createdAt?: string;
 }
 
 interface Session {
-  userId: string;
-  username: string;
-  checkedInAt: string;
-  checkedOutAt: string;
-  duration: number;
+  userId?: string;
+  username?: string;
+  checked_in_at: string;
+  checked_out_at: string;
+  checkedInAt?: string;
+  checkedOutAt?: string;
+  duration?: number;
+  duration_ms?: number;
+  forced_by_admin?: boolean;
   forcedByAdmin?: boolean;
 }
 
@@ -362,7 +371,7 @@ export function AdminPanel() {
               <div className="text-center py-8 text-gray-500">No suggestions submitted yet</div>
             ) : (
               <div className="space-y-4">
-                {opportunitySuggestions.map((suggestion: { id: string; opportunity_title: string; description: string; status: string }) => (
+                {opportunitySuggestions.map((suggestion: { id: string; opportunity_title: string; description: string; status: string; nhs_user_id?: string; created_at?: string; organization_name?: string; contact_info?: string; estimated_hours?: number; preferred_location?: string }) => (
                   <div key={suggestion.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-lg">{suggestion.opportunity_title}</h3>
@@ -380,7 +389,7 @@ export function AdminPanel() {
                         <span className="font-medium text-gray-700">Submitted by:</span> {suggestion.nhs_user_id}
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Submitted:</span> {formatDateTime(suggestion.created_at)}
+                        <span className="font-medium text-gray-700">Submitted:</span> {suggestion.created_at ? formatDateTime(suggestion.created_at) : 'N/A'}
                       </div>
                       {suggestion.organization_name && (
                         <div>
