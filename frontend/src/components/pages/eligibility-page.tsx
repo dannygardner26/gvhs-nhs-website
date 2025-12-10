@@ -198,7 +198,7 @@ export function EligibilityPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">What You'll Need:</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">What You&apos;ll Need:</h4>
                 <ul className="space-y-1 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-royal-blue">1.</span>
