@@ -174,7 +174,7 @@ export function VolunteeringPage() {
       } else {
         setFormMessage("Error submitting suggestion. Please try again.");
       }
-    } catch (error) {
+    } catch {
       setFormMessage("Error connecting to server. Please try again.");
     } finally {
       setSubmittingForm(false);
@@ -370,7 +370,7 @@ export function VolunteeringPage() {
                   Have an Idea for a New Opportunity?
                 </h3>
                 <p className="text-blue-600 mb-6 max-w-2xl mx-auto">
-                  We're always looking for new ways to serve our community. If you have an idea for a volunteer opportunity
+                  We&apos;re always looking for new ways to serve our community. If you have an idea for a volunteer opportunity
                   or know of an organization that could use our help, let us know!
                 </p>
                 {isAuthenticated ? (

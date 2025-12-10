@@ -34,7 +34,7 @@ export function decryptData(encryptedText: string): string {
       return encryptedText; // Return as-is if format is invalid
     }
 
-    const iv = Buffer.from(parts[0], 'hex');
+    const _iv = Buffer.from(parts[0], 'hex');
     const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
 
