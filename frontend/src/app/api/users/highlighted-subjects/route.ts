@@ -110,8 +110,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  let highlightedSubjects: string[] = [];
+  let userId: string = '';
+
   try {
-    const { userId, highlightedSubjects } = await request.json();
+    const requestData = await request.json();
+    userId = requestData.userId;
+    highlightedSubjects = requestData.highlightedSubjects;
 
     if (!userId) {
       return NextResponse.json({
