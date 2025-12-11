@@ -11,7 +11,7 @@ export async function GET(
 
     const { data: sessions, error } = await supabase
       .from('session_history')
-      .select('*')
+      .select('id, user_id, checked_in_at, checked_out_at, duration_ms, forced_by_admin, created_at')
       .eq('user_id', userId)
       .order('checked_in_at', { ascending: false })
 

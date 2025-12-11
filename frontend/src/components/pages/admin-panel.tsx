@@ -5,9 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff, Trash2, Settings, Bus, BarChart3, MessageSquare, FileText } from "lucide-react";
 import { UserCard } from "@/components/admin/UserCard";
 import { ActiveUsersPanel } from "@/components/admin/ActiveUsersPanel";
+import { AdminOpportunityManager } from "@/components/admin/AdminOpportunityManager";
+import { TransportationManagement } from "@/components/admin/TransportationManager";
+import { NHSElementaryVisits } from "@/components/admin/NHSElementaryVisits";
 
 interface User {
   userId: string;
@@ -124,7 +128,13 @@ export function AdminPanel() {
 
   const fetchUserSessions = async (userId: string) => {
     try {
-      const response = await fetch(`/api/checkin/admin/session-history/${userId}`);
+      // Find the user to get their real database ID
+      const user = users.find(u => (u.user_id || u.userId) === userId);
+      const realUserId = user?.real_user_id || userId;
+
+      console.log(`Fetching sessions for masked ID ${userId} using real ID ${realUserId}`);
+
+      const response = await fetch(`/api/checkin/admin/session-history/${realUserId}`);
       if (response.ok) {
         const sessions = await response.json();
         setUserSessions(prev => ({ ...prev, [userId]: sessions }));
@@ -136,7 +146,13 @@ export function AdminPanel() {
 
   const fetchUserHours = async (userId: string) => {
     try {
-      const response = await fetch(`/api/checkin/admin/total-hours/${userId}`);
+      // Find the user to get their real database ID
+      const user = users.find(u => (u.user_id || u.userId) === userId);
+      const realUserId = user?.real_user_id || userId;
+
+      console.log(`Fetching hours for masked ID ${userId} using real ID ${realUserId}`);
+
+      const response = await fetch(`/api/checkin/admin/total-hours/${realUserId}`);
       if (response.ok) {
         const hours = await response.json();
         setUserHours(prev => ({ ...prev, [userId]: hours }));
@@ -164,10 +180,16 @@ export function AdminPanel() {
     if (!confirm(`Force checkout ${email}?`)) return;
 
     try {
+      // Find the user to get their real database ID
+      const user = users.find(u => (u.user_id || u.userId) === userId);
+      const realUserId = user?.real_user_id || userId;
+
+      console.log(`Force checkout for masked ID ${userId} using real ID ${realUserId}`);
+
       const response = await fetch("/api/checkin/admin/force-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId: realUserId }),
       });
 
       if (response.ok) {
@@ -271,6 +293,32 @@ export function AdminPanel() {
     return date.toLocaleString();
   };
 
+  // Status update function removed - suggestions are now view-only with contact info
+
+  const handleSuggestionDelete = async (suggestionId: string) => {
+    if (!confirm("Are you sure you want to delete this suggestion? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/opportunity-suggestions/${suggestionId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setMessage("Suggestion deleted successfully!");
+        fetchOpportunitySuggestions();
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.error || "Failed to delete suggestion");
+      }
+    } catch (error) {
+      console.error("Error deleting suggestion:", error);
+      setMessage("Error connecting to server");
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="h-screen overflow-hidden flex items-center justify-center bg-gray-50">
@@ -355,10 +403,46 @@ export function AdminPanel() {
           </div>
         )}
 
-        {/* Active Users Panel */}
-        <ActiveUsersPanel onForceCheckout={() => fetchUsers()} />
+        {/* Admin Tabs */}
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              General
+            </TabsTrigger>
+            <TabsTrigger value="elementary" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Elementary
+            </TabsTrigger>
+            <TabsTrigger value="transportation" className="flex items-center gap-2">
+              <Bus className="w-4 h-4" />
+              Transport
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="communications" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Messages
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Reports
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Opportunity Suggestions */}
+          {/* Tab 1: General Admin */}
+          <TabsContent value="general" className="space-y-6">
+            {/* Active Users Panel */}
+            <ActiveUsersPanel onForceCheckout={() => fetchUsers()} />
+
+            {/* Volunteer Opportunity Manager - Consolidated with Event Manager */}
+            <div className="mb-6">
+              <AdminOpportunityManager />
+            </div>
+
+            {/* Opportunity Suggestions */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -375,13 +459,23 @@ export function AdminPanel() {
                   <div key={suggestion.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-lg">{suggestion.opportunity_title}</h3>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        suggestion.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        suggestion.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {suggestion.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          suggestion.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          suggestion.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {suggestion.status}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSuggestionDelete(suggestion.id)}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 h-7 w-7"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-gray-600 mb-3">{suggestion.description}</p>
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -412,16 +506,32 @@ export function AdminPanel() {
                         </div>
                       )}
                     </div>
-                    {suggestion.status === 'pending' && (
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                          Approve
-                        </Button>
-                        <Button size="sm" variant="destructive">
-                          Reject
-                        </Button>
+                    <div className="bg-blue-50 p-3 rounded-lg mt-3 border border-blue-200">
+                      <div className="text-sm font-medium text-blue-900 mb-2">
+                        📧 Contact Information:
                       </div>
-                    )}
+                      <div className="text-sm text-blue-800">
+                        {suggestion.contact_info ? (
+                          <>
+                            <strong>Email:</strong> {suggestion.contact_info}
+                            <br />
+                            <strong>For:</strong> {suggestion.opportunity_title}
+                            {suggestion.organization_name && (
+                              <>
+                                <br />
+                                <strong>Organization:</strong> {suggestion.organization_name}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <strong>Submitted by NHS Student:</strong> {suggestion.nhs_user_id}
+                            <br />
+                            <strong>Contact via:</strong> pmorabito@gvsd.org for student contact information
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -466,6 +576,87 @@ export function AdminPanel() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Tab 2: Elementary */}
+          <TabsContent value="elementary" className="space-y-6">
+            <NHSElementaryVisits />
+          </TabsContent>
+
+          {/* Tab 3: Transportation */}
+          <TabsContent value="transportation" className="space-y-6">
+            <TransportationManagement />
+          </TabsContent>
+
+          {/* Tab 4: Analytics - Coming Soon */}
+          <TabsContent value="analytics" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="w-5 h-5 mr-2" />
+                  Analytics Dashboard
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center py-12">
+                <div className="space-y-4">
+                  <div className="text-6xl mb-4">📊</div>
+                  <h3 className="text-2xl font-semibold text-gray-700">Coming Soon</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    Advanced analytics and reporting dashboard featuring volunteer hour tracking,
+                    participation trends, elementary school visit metrics, and transportation
+                    coordination insights.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 5: Communications - Coming Soon */}
+          <TabsContent value="communications" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MessageSquare className="w-5 h-5 mr-2" />
+                  Communications Center
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center py-12">
+                <div className="space-y-4">
+                  <div className="text-6xl mb-4">💬</div>
+                  <h3 className="text-2xl font-semibold text-gray-700">Coming Soon</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    Centralized messaging system for sending announcements to NHS members,
+                    coordinating volunteer opportunities, and managing group communications
+                    for events and activities.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 6: Reports - Coming Soon */}
+          <TabsContent value="reports" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Reports & Export
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center py-12">
+                <div className="space-y-4">
+                  <div className="text-6xl mb-4">📄</div>
+                  <h3 className="text-2xl font-semibold text-gray-700">Coming Soon</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    Generate and export detailed reports for volunteer hours, attendance records,
+                    member participation, and administrative documentation required for
+                    NHS compliance and record-keeping.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

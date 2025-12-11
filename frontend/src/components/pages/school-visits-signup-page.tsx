@@ -47,12 +47,12 @@ export function SchoolVisitsSignupPage() {
 
   // Available events (would come from API in production)
   const availableEvents: SchoolVisitEvent[] = [
-    { id: "1", date: "2025-01-15", school: "Sugartown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "2", date: "2025-01-22", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "3", date: "2025-02-05", school: "General Wayne Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "4", date: "2025-02-12", school: "Sugartown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "5", date: "2025-02-26", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "6", date: "2025-03-05", school: "General Wayne Elementary", time: "9:00 AM - 10:30 AM" },
+    { id: "1", date: "2024-12-12", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
+    { id: "2", date: "2025-01-15", school: "Sugartown Elementary", time: "9:00 AM - 10:30 AM" },
+    { id: "3", date: "2025-01-22", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
+    { id: "4", date: "2025-02-05", school: "General Wayne Elementary", time: "9:00 AM - 10:30 AM" },
+    { id: "5", date: "2025-02-12", school: "Sugartown Elementary", time: "9:00 AM - 10:30 AM" },
+    { id: "6", date: "2025-02-26", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
   ];
 
   useEffect(() => {
@@ -162,14 +162,25 @@ export function SchoolVisitsSignupPage() {
           Back to Volunteering
         </Link>
 
+        {/* WARNING BANNER */}
+        <div className="bg-red-600 text-white p-4 rounded-lg mb-6 shadow-lg">
+          <div className="flex items-center justify-center gap-3">
+            <AlertCircle className="w-6 h-6" />
+            <div className="text-center">
+              <p className="text-lg font-bold">⚠️ NOT OFFICIAL SIGNUP ⚠️</p>
+              <p className="text-sm mt-1">Fill out the form sent on Remind for official registration</p>
+            </div>
+          </div>
+        </div>
+
         <Card className="shadow-lg">
           <CardHeader className="text-center border-b">
             <CardTitle className="flex items-center justify-center text-royal-blue text-2xl">
               <School className="w-6 h-6 mr-2" />
-              Elementary School Visits Signup
+              NHS Elementary School Visits
             </CardTitle>
             <p className="text-gray-600 mt-2">
-              Sign up to read with elementary students at local schools
+              <strong>Next visit: Friday, December 12th</strong> - Sign up to read with elementary students at local schools
             </p>
           </CardHeader>
 
@@ -251,16 +262,21 @@ export function SchoolVisitsSignupPage() {
                       <SelectValue placeholder="Choose an event..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableEvents.map((event) => (
-                        <SelectItem key={event.id} value={event.id}>
-                          {new Date(event.date).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}{" "}
-                          - {event.school} ({event.time})
-                        </SelectItem>
-                      ))}
+                      {availableEvents.map((event, index) => {
+                        const isNext = index === 0;
+                        return (
+                          <SelectItem key={event.id} value={event.id}>
+                            {isNext && "🔥 NEXT: "}
+                            {new Date(event.date).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}{" "}
+                            - {event.school} ({event.time})
+                            {isNext && " - Friday 12/12"}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

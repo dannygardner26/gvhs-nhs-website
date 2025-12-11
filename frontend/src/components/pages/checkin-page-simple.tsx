@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserCheck, UserX, Users, RefreshCw, Mail, Key } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CheckinPageSimple() {
-  const [mode, setMode] = useState<"select" | "existing" | "account" | "new" | "registered">("select"); // select mode, existing user (ID), account login, new user, or just registered
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const [mode, setMode] = useState<"select" | "existing" | "account" | "new" | "registered" | "undo">("select"); // select mode, existing user (ID), account login, new user, just registered, or undo checkin
+  const [verifiedUser, setVerifiedUser] = useState<any>(null);
   const [userId, setUserId] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -22,7 +25,21 @@ export function CheckinPageSimple() {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   useEffect(() => {
-    // Check if user is remembered in localStorage
+    // If user is authenticated via AuthContext, use that instead of localStorage
+    if (isAuthenticated && user) {
+      console.log("User is authenticated via AuthContext:", user);
+      setUserId(user.userId);
+      setFirstName(user.firstName);
+      setLastName(user.lastName);
+      setEmail(user.email || "");
+      setVerifiedUser(user);
+      setMode("existing");
+      checkUserStatus(user.userId);
+      setMessage(`Welcome, ${user.firstName} ${user.lastName}! Your account is recognized - complete your check-in above.`);
+      return;
+    }
+
+    // Fallback: Check if user is remembered in localStorage
     const savedUserId = localStorage.getItem("checkin_userId");
     if (savedUserId) {
       setUserId(savedUserId);
@@ -52,7 +69,7 @@ export function CheckinPageSimple() {
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCheckedIn]);
+  }, [isCheckedIn, isAuthenticated, user]);
 
   // Debounced user ID availability check for new users
   useEffect(() => {
@@ -152,7 +169,7 @@ export function CheckinPageSimple() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/checkin/verify-and-checkin`, {
+      const response = await fetch(`/api/checkin/verify-user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -162,16 +179,15 @@ export function CheckinPageSimple() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.verified) {
+        // User verified, immediately check them in
+        await immediateCheckin(data);
+      } else if (data.alreadyCheckedIn) {
+        // User is already checked in
         setIsCheckedIn(true);
         localStorage.setItem("checkin_userId", userId);
-        setMessage(`Successfully checked in! Welcome back, ${data.username}.`);
-        fetchCurrentCount();
-      } else if (data.message && data.message.includes("already checked in")) {
-        // User is already checked in, update state to reflect this
-        setIsCheckedIn(true);
-        localStorage.setItem("checkin_userId", userId);
-        setMessage("You are already checked in. Use the button below to check out when you leave.");
+        setVerifiedUser(data);
+        setMessage(`You are already checked in, ${data.firstName}! You checked in at ${new Date(data.checkedInAt).toLocaleTimeString()}. Use the button below to check out when you leave.`);
       } else {
         setMessage(data.message || "User ID not found. Please check your ID or register as a new user.");
       }
@@ -179,6 +195,74 @@ export function CheckinPageSimple() {
       setMessage("Error connecting to server");
     }
     setLoading(false);
+  };
+
+  const immediateCheckin = async (userData: any) => {
+    try {
+      const response = await fetch(`/api/checkin/confirm-checkin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: userData.userId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsCheckedIn(true);
+        setVerifiedUser(userData);
+        localStorage.setItem("checkin_userId", userData.userId);
+        setMessage(`Successfully checked in! Welcome, ${userData.firstName}!`);
+        setMode("undo"); // Show undo option briefly
+        fetchCurrentCount();
+
+        // Auto-hide undo option after 10 seconds
+        setTimeout(() => {
+          if (mode === "undo") {
+            setMode("existing");
+          }
+        }, 10000);
+      } else {
+        setMessage(data.message || "Error checking in. Please try again.");
+      }
+    } catch {
+      setMessage("Error connecting to server");
+    }
+  };
+
+  const handleUndoCheckin = async () => {
+    if (!verifiedUser) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/checkin/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: verifiedUser.userId }),
+      });
+
+      if (response.ok) {
+        setIsCheckedIn(false);
+        setVerifiedUser(null);
+        localStorage.removeItem("checkin_userId");
+        setMessage("Check-in canceled. Please enter the correct User ID.");
+        setMode("existing");
+        fetchCurrentCount();
+      } else {
+        setMessage("Error canceling check-in. Please try again.");
+      }
+    } catch {
+      setMessage("Error connecting to server");
+    }
+    setLoading(false);
+  };
+
+  const handleConfirmCheckin = () => {
+    setMode("existing");
+    setMessage("");
   };
 
   const handleNewUserRegistration = async () => {
@@ -535,16 +619,6 @@ export function CheckinPageSimple() {
                   >
                     Back
                   </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setUserId("000000");
-                      setMessage("Demo ID entered. Click Check In to continue.");
-                    }}
-                    className="w-full text-gray-500"
-                  >
-                    Use Demo Account (000000)
-                  </Button>
                   {localStorage.getItem("checkin_userId") && (
                     <Button
                       variant="ghost"
@@ -559,6 +633,66 @@ export function CheckinPageSimple() {
                     </Button>
                   )}
                 </div>
+              </div>
+            ) : mode === "undo" && verifiedUser ? (
+              <div className="space-y-4">
+                <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
+                  <UserCheck className="w-16 h-16 text-green-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">
+                    Successfully Checked In!
+                  </h3>
+                  <div className="text-2xl font-bold text-green-800 mb-2">
+                    {verifiedUser.firstName} {verifiedUser.lastName}
+                  </div>
+                  <div className="text-sm text-green-700">
+                    User ID: {verifiedUser.userId}
+                  </div>
+                  {verifiedUser.email && (
+                    <div className="text-sm text-green-600 mt-1">
+                      {verifiedUser.email}
+                    </div>
+                  )}
+                  {verifiedUser.highlightedSubjects && verifiedUser.highlightedSubjects.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs text-green-700 mb-2">Your highlighted tutoring subjects:</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {verifiedUser.highlightedSubjects.map((subject: string) => (
+                          <span
+                            key={subject}
+                            className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-300"
+                          >
+                            ⭐ {subject}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={handleConfirmCheckin}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Continue
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleUndoCheckin}
+                    disabled={loading}
+                    className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <UserX className="w-4 h-4 mr-2" />
+                    {loading ? "Undoing..." : "Not Me - Undo"}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-gray-500 text-center">
+                  Wrong person? Click "Not Me - Undo" to cancel this check-in and try again.
+                  <br />
+                  This option will disappear automatically in 10 seconds.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">

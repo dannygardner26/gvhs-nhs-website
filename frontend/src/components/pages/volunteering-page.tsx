@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Heart, Users, Camera, Clock, MapPin, Calendar, Gamepad2, HandHeart, Laptop, Mail, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { VolunteerInterestForm } from "@/components/forms/VolunteerInterestForm";
 
 interface VolunteerOpportunity {
   id: string;
@@ -30,10 +31,10 @@ const opportunities: VolunteerOpportunity[] = [
   {
     id: "nhs-elementary",
     title: "NHS Elementary School Visits",
-    description: "Visit local elementary schools to read to students, help with activities, and inspire the next generation of learners.",
+    description: "Visit local elementary schools to read to students, help with activities, and inspire the next generation of learners. Next visit: Friday, December 12th.",
     location: "Various Elementary Schools",
     duration: "2-3 hours",
-    date: "Twice monthly",
+    date: "Next visit: December 12 (Friday)",
     icon: <Users className="w-6 h-6" />,
     category: "community",
     spots: 8,
@@ -121,6 +122,7 @@ const opportunities: VolunteerOpportunity[] = [
 export function VolunteeringPage() {
   const { user, isAuthenticated } = useAuth();
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
+  const [dynamicOpportunities, setDynamicOpportunities] = useState<VolunteerOpportunity[]>(opportunities);
   const [suggestionForm, setSuggestionForm] = useState({
     opportunityTitle: "",
     description: "",
@@ -131,6 +133,37 @@ export function VolunteeringPage() {
   });
   const [submittingForm, setSubmittingForm] = useState(false);
   const [formMessage, setFormMessage] = useState("");
+  const [selectedOpportunity, setSelectedOpportunity] = useState<VolunteerOpportunity | null>(null);
+  const [showInterestForm, setShowInterestForm] = useState(false);
+
+  // Icon mapping for converting admin opportunities
+  const iconMap: Record<string, React.ReactNode> = {
+    "Users": <Users className="w-6 h-6" />,
+    "Gamepad2": <Gamepad2 className="w-6 h-6" />,
+    "HandHeart": <HandHeart className="w-6 h-6" />,
+    "Laptop": <Laptop className="w-6 h-6" />,
+    "Camera": <Camera className="w-6 h-6" />,
+    "Heart": <Heart className="w-6 h-6" />
+  };
+
+  // Load dynamic opportunities from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('volunteer_opportunities');
+    if (saved) {
+      try {
+        const adminOpportunities = JSON.parse(saved);
+        // Convert admin format to display format
+        const convertedOpportunities: VolunteerOpportunity[] = adminOpportunities.map((opp: any) => ({
+          ...opp,
+          icon: iconMap[opp.iconName] || <Users className="w-6 h-6" />
+        }));
+        setDynamicOpportunities(convertedOpportunities);
+      } catch (e) {
+        console.error('Error loading saved opportunities:', e);
+        setDynamicOpportunities(opportunities);
+      }
+    }
+  }, []);
 
   const handleSuggestionSubmit = async () => {
     if (!isAuthenticated) {
@@ -213,6 +246,25 @@ export function VolunteeringPage() {
       case "email":
         return (
           <div className="space-y-2">
+            {/* Warning Banner for NHS Elementary Visits - right above Express Interest */}
+            {opportunity.id === 'nhs-elementary' && (
+              <div className="w-full bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2 rounded-md text-xs font-medium text-center mb-2">
+                ⚠️ Not official signup - use Remind form
+              </div>
+            )}
+            {/* Express Interest Button for morabito opportunities and Interact Club */}
+            {(opportunity.contactInfo?.includes('morabito') || opportunity.id === 'interact-club') && (
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 mb-2"
+                onClick={() => {
+                  setSelectedOpportunity(opportunity);
+                  setShowInterestForm(true);
+                }}
+              >
+                <Heart className="w-4 h-4 mr-2" />
+                Express Interest
+              </Button>
+            )}
             <div className="flex items-center justify-center gap-2 p-3 bg-gray-50 rounded-lg">
               <Mail className="w-4 h-4 text-gray-500" />
               <a
@@ -223,7 +275,10 @@ export function VolunteeringPage() {
               </a>
             </div>
             <p className="text-xs text-gray-500 text-center">
-              {opportunity.contactLabel}
+              {(opportunity.contactInfo?.includes('morabito') || opportunity.id === 'interact-club')
+                ? "Use 'Express Interest' above for easier contact, or email directly"
+                : opportunity.contactLabel
+              }
             </p>
           </div>
         );
@@ -294,9 +349,9 @@ export function VolunteeringPage() {
 
         {/* Opportunities Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {opportunities.map((opportunity) => (
+          {dynamicOpportunities.map((opportunity) => (
             <Card key={opportunity.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
-              <CardHeader>
+                <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
@@ -517,6 +572,17 @@ export function VolunteeringPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Volunteer Interest Form Modal */}
+        {showInterestForm && selectedOpportunity && (
+          <VolunteerInterestForm
+            opportunity={selectedOpportunity}
+            onClose={() => {
+              setShowInterestForm(false);
+              setSelectedOpportunity(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,9 +1,33 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, BookOpen, Users, Heart, Award, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, BookOpen, Users, Heart, Award, Calendar, X, ArrowRight } from "lucide-react";
 
 export function EligibilityPage() {
+  const [showJoinPopup, setShowJoinPopup] = useState(false);
+  const [buttonClicked, setButtonClicked] = useState(false);
+
+  // Handle backdrop click and escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowJoinPopup(false);
+      }
+    };
+
+    if (showJoinPopup) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden'; // Prevent background scroll
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showJoinPopup]);
+
   const pillars = [
     {
       name: "Scholarship",
@@ -245,6 +269,97 @@ export function EligibilityPage() {
           </CardContent>
         </Card>
 
+        {/* Join Now Button */}
+        <div className="text-center my-12">
+          <Button
+            onClick={() => setButtonClicked(true)}
+            size="lg"
+            className={`bg-royal-blue hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg transition-all duration-500 ${
+              buttonClicked ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+            }`}
+          >
+            Join NHS Now
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+
+          {/* Information paragraph that appears after button click */}
+          <div
+            className={`transition-all duration-700 ease-in-out ${
+              buttonClicked ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4 pointer-events-none'
+            }`}
+          >
+            <div className="max-w-2xl mx-auto mt-6 p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-gray-800 leading-relaxed">
+                NHS membership is by invitation only during the formal application period. All requirements above must be met by the start of your junior year. Applications open in September/October for qualified juniors and seniors. Keep building your scholarship, leadership, service, and character. When the application period opens, you will be ready to submit a strong candidate information form.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Join Popup */}
+        {showJoinPopup && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowJoinPopup(false)}
+          >
+            <div
+              className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-royal-blue">Ready to Join NHS?</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowJoinPopup(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4 text-gray-700">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="font-semibold text-blue-800 mb-2">✨ You are eligible and invited to apply for NHS!</p>
+                    <p className="text-blue-700 text-sm">Meeting the requirements above makes you a candidate for consideration.</p>
+                  </div>
+
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="font-semibold text-yellow-800 mb-2">⚠️ Important: You cannot simply apply directly</p>
+                    <p className="text-yellow-700 text-sm">NHS membership is by invitation only during the formal application period.</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="font-medium">Here's how it works:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>All requirements above must be met by the start of your <strong>junior year</strong></li>
+                      <li>NHS membership is by <strong>invitation only</strong> during the formal application period</li>
+                      <li>Applications open in <strong>September/October</strong> for qualified juniors and seniors</li>
+                      <li>Check the timeline above for specific dates and deadlines</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <p className="text-green-800 text-sm">
+                      <strong>Next steps:</strong> Keep building your scholarship, leadership, service, and character.
+                      When the application period opens, you'll be ready to submit a strong candidate information form!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 text-center">
+                  <Button
+                    onClick={() => setShowJoinPopup(false)}
+                    className="bg-royal-blue hover:bg-blue-700 text-white px-6"
+                  >
+                    Got it!
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Contact */}
         <div className="text-center mt-8 text-gray-600">

@@ -11,7 +11,12 @@
       "Bash(powershell -Command \"cd ''C:\\Users\\danny\\Documents\\Github\\gvhs-nhs-website\\frontend''; npm run build 2>&1\")",
       "Bash(npm info:*)",
       "Bash(supabase projects:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(npm run dev:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(supabase:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Key, ChevronDown, ChevronUp, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { Key, ChevronDown, ChevronUp, Trash2, AlertTriangle, Clock, ExternalLink } from "lucide-react";
 
 interface UserData {
   user_id?: string;
@@ -12,6 +13,7 @@ interface UserData {
   email: string;
   isCheckedIn?: boolean;
   checkedInAt?: string;
+  createdAt?: string;
 }
 
 interface SessionData {
@@ -85,7 +87,18 @@ export function UserCard({
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h3 className="font-semibold text-lg">{user.first_name} {user.last_name}</h3>
+            <Link
+              href={`/admin/users/${userId}/profile`}
+              className="hover:underline"
+              onClick={() => {
+                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+              }}
+            >
+              <h3 className="font-semibold text-lg text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                {user.first_name} {user.last_name}
+                <ExternalLink className="w-4 h-4" />
+              </h3>
+            </Link>
             {user.isCheckedIn && (
               <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                 Currently in library
@@ -95,6 +108,11 @@ export function UserCard({
           <div className="text-sm text-gray-600 mt-1">
             <span className="font-medium">User ID:</span> {userId} | <span className="font-medium">Email:</span> {user.email || 'No email provided'}
           </div>
+          {user.createdAt && (
+            <div className="text-xs text-gray-500 mt-1">
+              <span className="font-medium">Registered:</span> {formatDateTime(user.createdAt)}
+            </div>
+          )}
           {user.isCheckedIn && user.checkedInAt && (
             <div className="text-xs text-gray-500 mt-1">
               Checked in: {formatDateTime(user.checkedInAt)}

@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, BookOpen, Clock, Settings, Award, BarChart3, Edit, Save, X, CheckCircle, GraduationCap } from "lucide-react";
+import { User, BookOpen, Clock, Settings, Award, BarChart3, Edit, Save, X, CheckCircle, GraduationCap, PieChart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SubjectsPieChart } from "@/components/charts/SubjectsPieChart";
 
 interface TutorStats {
   totalHours: number;
@@ -59,7 +60,13 @@ export function TutorProfilePage() {
     email: "",
   });
   const [tutoringSubjects, setTutoringSubjects] = useState<string[]>([]);
+  const [highlightedSubjects, setHighlightedSubjects] = useState<string[]>([]);
   const [isEditingSubjects, setIsEditingSubjects] = useState(false);
+  const [isEditingHighlights, setIsEditingHighlights] = useState(false);
+  const [hasUnsavedSubjects, setHasUnsavedSubjects] = useState(false);
+  const [hasUnsavedHighlights, setHasUnsavedHighlights] = useState(false);
+  const [originalTutoringSubjects, setOriginalTutoringSubjects] = useState<string[]>([]);
+  const [originalHighlightedSubjects, setOriginalHighlightedSubjects] = useState<string[]>([]);
   const [tutorStats, setTutorStats] = useState<TutorStats>({
     totalHours: 0,
     totalSessions: 0,
@@ -80,10 +87,11 @@ export function TutorProfilePage() {
     }
   }, [user]);
 
-  // Load tutor statistics
+  // Load tutor statistics and subjects
   useEffect(() => {
     if (user?.userId) {
       loadTutorStats();
+      loadHighlightedSubjects();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId]);
@@ -99,9 +107,109 @@ export function TutorProfilePage() {
           totalHours: Math.round((data.totalDurationMs || 0) / (1000 * 60 * 60) * 10) / 10, // Convert to hours
           totalSessions: data.totalSessions || 0,
         }));
+      } else {
+        // If API fails, just use default values - don't show error
+        console.log("Total hours API not available, using defaults");
+        setTutorStats(prev => ({
+          ...prev,
+          totalHours: 0,
+          totalSessions: 0,
+        }));
       }
     } catch (error) {
       console.error("Error loading tutor stats:", error);
+      // Gracefully handle error with defaults
+      setTutorStats(prev => ({
+        ...prev,
+        totalHours: 0,
+        totalSessions: 0,
+      }));
+    }
+  };
+
+  const loadHighlightedSubjects = async () => {
+    try {
+      const response = await fetch(`/api/users/tutoring-subjects?userId=${user?.userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const loadedHighlights = data.highlightedSubjects || [];
+        const loadedSubjects = data.tutoringSubjects || [];
+
+        setHighlightedSubjects(loadedHighlights);
+        setTutoringSubjects(loadedSubjects);
+        setOriginalHighlightedSubjects([...loadedHighlights]);
+        setOriginalTutoringSubjects([...loadedSubjects]);
+
+        // Save successful API load to localStorage
+        try {
+          localStorage.setItem(`highlighted_subjects_${user?.userId}`, JSON.stringify(loadedHighlights));
+          localStorage.setItem(`tutoring_subjects_${user?.userId}`, JSON.stringify(loadedSubjects));
+        } catch (e) {
+          console.log('Failed to save to localStorage:', e);
+        }
+      } else {
+        console.log("Tutoring subjects API not available, trying localStorage");
+        // Try localStorage as backup
+        try {
+          const savedHighlights = localStorage.getItem(`highlighted_subjects_${user?.userId}`);
+          const savedSubjects = localStorage.getItem(`tutoring_subjects_${user?.userId}`);
+
+          if (savedHighlights || savedSubjects) {
+            const highlights = savedHighlights ? JSON.parse(savedHighlights) : [];
+            const subjects = savedSubjects ? JSON.parse(savedSubjects) : [];
+
+            setHighlightedSubjects(highlights);
+            setTutoringSubjects(subjects);
+            setOriginalHighlightedSubjects([...highlights]);
+            setOriginalTutoringSubjects([...subjects]);
+
+            if (highlights.length > 0 || subjects.length > 0) {
+              setMessage("Loaded your saved subjects");
+              setTimeout(() => setMessage(""), 3000);
+            }
+          } else {
+            setHighlightedSubjects([]);
+            setTutoringSubjects([]);
+            setOriginalHighlightedSubjects([]);
+            setOriginalTutoringSubjects([]);
+          }
+        } catch (storageError) {
+          setHighlightedSubjects([]);
+          setTutoringSubjects([]);
+          setOriginalHighlightedSubjects([]);
+          setOriginalTutoringSubjects([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading tutoring subjects:", error);
+      // Try localStorage as final fallback
+      try {
+        const savedHighlights = localStorage.getItem(`highlighted_subjects_${user?.userId}`);
+        const savedSubjects = localStorage.getItem(`tutoring_subjects_${user?.userId}`);
+
+        if (savedHighlights || savedSubjects) {
+          const highlights = savedHighlights ? JSON.parse(savedHighlights) : [];
+          const subjects = savedSubjects ? JSON.parse(savedSubjects) : [];
+
+          setHighlightedSubjects(highlights);
+          setTutoringSubjects(subjects);
+          setOriginalHighlightedSubjects([...highlights]);
+          setOriginalTutoringSubjects([...subjects]);
+
+          setMessage("Connection error - loaded last saved subjects");
+          setTimeout(() => setMessage(""), 5000);
+        } else {
+          setHighlightedSubjects([]);
+          setTutoringSubjects([]);
+          setOriginalHighlightedSubjects([]);
+          setOriginalTutoringSubjects([]);
+        }
+      } catch (storageError) {
+        setHighlightedSubjects([]);
+        setTutoringSubjects([]);
+        setOriginalHighlightedSubjects([]);
+        setOriginalTutoringSubjects([]);
+      }
     }
   };
 
@@ -141,23 +249,147 @@ export function TutorProfilePage() {
   };
 
   const handleSubjectToggle = (subject: string) => {
-    setTutoringSubjects(prev =>
-      prev.includes(subject)
+    setTutoringSubjects(prev => {
+      const newSubjects = prev.includes(subject)
         ? prev.filter(s => s !== subject)
-        : [...prev, subject]
-    );
+        : [...prev, subject];
+
+      // Auto-remove from highlighted subjects if removed from tutoring subjects
+      if (prev.includes(subject) && !newSubjects.includes(subject)) {
+        setHighlightedSubjects(currentHighlighted => {
+          const updatedHighlighted = currentHighlighted.filter(s => s !== subject);
+
+          // Check if highlighted subjects have unsaved changes
+          setHasUnsavedHighlights(
+            JSON.stringify(updatedHighlighted.sort()) !== JSON.stringify(originalHighlightedSubjects.sort())
+          );
+
+          // Show message if we auto-removed a highlighted subject
+          if (currentHighlighted.includes(subject)) {
+            setMessage(`Removed "${subject}" from highlighted subjects since it's no longer a tutoring subject`);
+            setTimeout(() => setMessage(""), 4000);
+          }
+
+          return updatedHighlighted;
+        });
+      }
+
+      // Check if there are unsaved changes
+      setHasUnsavedSubjects(
+        JSON.stringify(newSubjects.sort()) !== JSON.stringify(originalTutoringSubjects.sort())
+      );
+
+      return newSubjects;
+    });
   };
 
   const handleSaveSubjects = async () => {
+    console.log('=== CLIENT: Starting tutoring subjects save ===');
+    console.log('User ID:', user?.userId);
+    console.log('Subjects to save:', tutoringSubjects);
+
     try {
-      // Here you would save to an API endpoint
-      // For now, just show success message
-      setMessage("Tutoring subjects updated successfully!");
-      setIsEditingSubjects(false);
-      setTimeout(() => setMessage(""), 3000);
+      const response = await fetch('/api/users/tutoring-subjects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user?.userId,
+          tutoringSubjects
+        }),
+      });
+
+      const responseData = await response.json();
+      console.log('Server response:', responseData);
+
+      if (response.ok) {
+        const successMessage = responseData.debug
+          ? `${responseData.message} (${responseData.debug})`
+          : responseData.message;
+
+        setMessage(successMessage);
+        setIsEditingSubjects(false);
+        setHasUnsavedSubjects(false);
+        setOriginalTutoringSubjects([...tutoringSubjects]);
+
+        // Save to localStorage as backup
+        try {
+          localStorage.setItem(`tutoring_subjects_${user?.userId}`, JSON.stringify(tutoringSubjects));
+          console.log('✅ Saved to localStorage as backup');
+        } catch (e) {
+          console.log('Failed to save to localStorage:', e);
+        }
+
+        setTimeout(() => setMessage(""), 5000);
+      } else {
+        const errorMessage = responseData.debug
+          ? `${responseData.message} (Debug: ${responseData.debug})`
+          : responseData.message || responseData.error || "Error updating tutoring subjects";
+
+        console.error('❌ Server error:', responseData);
+        setMessage(errorMessage);
+      }
     } catch (error) {
-      setMessage("Error updating tutoring subjects. Please try again.");
-      console.error("Error updating subjects:", error);
+      console.error("❌ Network/client error:", error);
+      setMessage("Network error: Could not connect to server. Please try again.");
+    }
+  };
+
+  const handleHighlightToggle = (subject: string) => {
+    setHighlightedSubjects(prev => {
+      let newHighlights;
+      if (prev.includes(subject)) {
+        newHighlights = prev.filter(s => s !== subject);
+      } else if (prev.length < 3) {
+        newHighlights = [...prev, subject];
+      } else {
+        // Don't allow more than 3 highlights
+        return prev;
+      }
+
+      // Check if there are unsaved changes
+      setHasUnsavedHighlights(
+        JSON.stringify(newHighlights.sort()) !== JSON.stringify(originalHighlightedSubjects.sort())
+      );
+
+      return newHighlights;
+    });
+  };
+
+  const handleSaveHighlights = async () => {
+    try {
+      const response = await fetch('/api/users/highlighted-subjects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user?.userId,
+          highlightedSubjects
+        }),
+      });
+
+      if (response.ok) {
+        setMessage("Highlighted subjects updated successfully!");
+        setHasUnsavedHighlights(false);
+        setOriginalHighlightedSubjects([...highlightedSubjects]);
+
+        // Save to localStorage as backup
+        try {
+          localStorage.setItem(`highlighted_subjects_${user?.userId}`, JSON.stringify(highlightedSubjects));
+        } catch (e) {
+          console.log('Failed to save highlighted subjects to localStorage:', e);
+        }
+
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.error || "Error updating highlighted subjects");
+      }
+    } catch (error) {
+      setMessage("Error updating highlighted subjects. Please try again.");
+      console.error("Error updating highlighted subjects:", error);
     }
   };
 
@@ -321,6 +553,140 @@ export function TutorProfilePage() {
                 </CardContent>
               </Card>
 
+              {/* Highlight Subjects */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <span className="text-yellow-600">⭐</span>
+                        Highlight Subjects
+                      </CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Choose up to 3 subjects to highlight on the tutor status page
+                      </p>
+                    </div>
+                    {!isEditingHighlights ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditingHighlights(true)}
+                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white"
+                        disabled={tutoringSubjects.length === 0}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (hasUnsavedHighlights) {
+                              const confirmed = confirm(
+                                "You have unsaved changes to your highlighted subjects. Are you sure you want to cancel and lose these changes?"
+                              );
+                              if (!confirmed) return;
+                            }
+                            setIsEditingHighlights(false);
+                            setHighlightedSubjects([...originalHighlightedSubjects]);
+                            setHasUnsavedHighlights(false);
+                          }}
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            handleSaveHighlights();
+                            setIsEditingHighlights(false);
+                          }}
+                          className="bg-yellow-600 hover:bg-yellow-700"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {tutoringSubjects.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500">
+                      <p className="mb-2">Add tutoring subjects first to highlight them</p>
+                      <p className="text-sm">↓ See "Tutoring Subjects" section below</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {isEditingHighlights ? (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-2">
+                            {tutoringSubjects.map((subject) => (
+                              <label
+                                key={subject}
+                                className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                  highlightedSubjects.includes(subject)
+                                    ? 'border-yellow-300 bg-yellow-50'
+                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                } ${
+                                  !highlightedSubjects.includes(subject) && highlightedSubjects.length >= 3
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : ''
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={highlightedSubjects.includes(subject)}
+                                  onChange={() => handleHighlightToggle(subject)}
+                                  disabled={!highlightedSubjects.includes(subject) && highlightedSubjects.length >= 3}
+                                  className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+                                />
+                                <span className="flex-1 text-sm font-medium text-gray-900">
+                                  {subject}
+                                </span>
+                                {highlightedSubjects.includes(subject) && (
+                                  <span className="text-yellow-600 text-sm">⭐</span>
+                                )}
+                              </label>
+                            ))}
+                          </div>
+                          <div className="pt-4 border-t border-gray-200">
+                            <p className="text-sm text-gray-600">
+                              Selected: {highlightedSubjects.length}/3 subjects
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-3">
+                          {highlightedSubjects.length > 0 ? (
+                            <div className="bg-blue-50 p-3 rounded-lg">
+                              <p className="text-sm text-blue-800 font-medium mb-2">Your highlighted subjects:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {highlightedSubjects.map((subject) => (
+                                  <span
+                                    key={subject}
+                                    className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-300"
+                                  >
+                                    ⭐ {subject}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-6 text-gray-500">
+                              <p className="mb-2">No subjects highlighted yet</p>
+                              <p className="text-sm">Click "Edit" to highlight up to 3 subjects</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Tutoring Subjects */}
               <Card>
                 <CardHeader>
@@ -344,7 +710,17 @@ export function TutorProfilePage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setIsEditingSubjects(false)}
+                          onClick={() => {
+                            if (hasUnsavedSubjects) {
+                              const confirmed = confirm(
+                                "You have unsaved changes to your tutoring subjects. Are you sure you want to cancel and lose these changes?"
+                              );
+                              if (!confirmed) return;
+                            }
+                            setIsEditingSubjects(false);
+                            setTutoringSubjects([...originalTutoringSubjects]);
+                            setHasUnsavedSubjects(false);
+                          }}
                         >
                           <X className="w-4 h-4 mr-2" />
                           Cancel
@@ -471,6 +847,22 @@ export function TutorProfilePage() {
                       <p>⭐ Rating: {tutorStats.rating}/5.0</p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Subjects Overview Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="w-5 h-5 text-royal-blue" />
+                    Subjects Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                  <SubjectsPieChart
+                    subjects={tutoringSubjects}
+                    highlightedSubjects={highlightedSubjects}
+                  />
                 </CardContent>
               </Card>
 

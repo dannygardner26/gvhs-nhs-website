@@ -8,12 +8,18 @@ interface CheckedInUser {
   users: {
     first_name: string;
     last_name: string;
+    highlighted_subjects?: string[];
   };
+}
+
+interface UserSubjects {
+  [userId: string]: string[];
 }
 
 export function TutorQueuePage() {
   const [currentCount, setCurrentCount] = useState(0);
   const [activeUsers, setActiveUsers] = useState<CheckedInUser[]>([]);
+  const [userHighlightedSubjects, setUserHighlightedSubjects] = useState<UserSubjects>({});
   const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
@@ -32,6 +38,32 @@ export function TutorQueuePage() {
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         setActiveUsers(usersData);
+
+        // Fetch highlighted subjects for each active user
+        const subjectsPromises = usersData.map(async (user: CheckedInUser) => {
+          try {
+            const response = await fetch(`/api/users/tutoring-subjects?userId=${user.user_id}`);
+            if (response.ok) {
+              const data = await response.json();
+              return {
+                userId: user.user_id,
+                highlightedSubjects: data.highlightedSubjects || []
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching subjects for user ${user.user_id}:`, error);
+          }
+          return { userId: user.user_id, highlightedSubjects: [] };
+        });
+
+        const subjectsResults = await Promise.all(subjectsPromises);
+        const subjectsMap: UserSubjects = {};
+        subjectsResults.forEach(result => {
+          if (result) {
+            subjectsMap[result.userId] = result.highlightedSubjects;
+          }
+        });
+        setUserHighlightedSubjects(subjectsMap);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -98,7 +130,7 @@ export function TutorQueuePage() {
           </div>
 
           {/* Names List */}
-          {activeUsers.length > 0 && (
+          {(activeUsers.length > 0 || currentCount > 0) && (
             <div style={{
               border: '1px solid #d1d5db',
               borderRadius: '8px',
@@ -114,22 +146,84 @@ export function TutorQueuePage() {
                 Current Students:
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {activeUsers.map((user, index) => (
-                  <div
-                    key={user.user_id}
-                    style={{
-                      padding: '0.75rem',
-                      backgroundColor: 'white',
-                      borderRadius: '4px',
-                      border: '1px solid #e5e7eb',
-                      textAlign: 'center'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', color: '#111827' }}>
-                      {index + 1}. {user.users.first_name} {user.users.last_name}
-                    </div>
+                {activeUsers.length === 0 && currentCount > 0 && (
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1rem',
+                    color: '#6b7280',
+                    fontStyle: 'italic'
+                  }}>
+                    Loading student details... ({currentCount} students checked in)
                   </div>
-                ))}
+                )}
+                {activeUsers.map((user, index) => {
+                  const highlightedSubjects = userHighlightedSubjects[user.user_id] || [];
+                  // Properly format names with proper casing
+                  const firstName = user.users.first_name?.charAt(0).toUpperCase() + user.users.first_name?.slice(1).toLowerCase() || '';
+                  const lastName = user.users.last_name?.charAt(0).toUpperCase() + user.users.last_name?.slice(1).toLowerCase() || '';
+
+                  return (
+                    <div
+                      key={user.user_id}
+                      style={{
+                        padding: '0.75rem',
+                        backgroundColor: 'white',
+                        borderRadius: '6px',
+                        border: '1px solid #e5e7eb',
+                        textAlign: 'center',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                      }}
+                    >
+                      <div style={{
+                        fontWeight: 'bold',
+                        color: '#1f2937',
+                        fontSize: '1rem',
+                        marginBottom: '4px'
+                      }}>
+                        {index + 1}. {firstName} {lastName}
+                      </div>
+                      {highlightedSubjects.length > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '4px',
+                          marginTop: '6px',
+                          justifyContent: 'center'
+                        }}>
+                          {highlightedSubjects.map((subject, subIndex) => (
+                            <span
+                              key={subIndex}
+                              style={{
+                                fontSize: '11px',
+                                padding: '3px 8px',
+                                borderRadius: '12px',
+                                backgroundColor: '#fef3c7',
+                                color: '#92400e',
+                                border: '1px solid #fbbf24',
+                                fontWeight: '500',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '2px'
+                              }}
+                            >
+                              ⭐ {subject}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {highlightedSubjects.length === 0 && (
+                        <div style={{
+                          fontSize: '11px',
+                          color: '#6b7280',
+                          fontStyle: 'italic',
+                          marginTop: '4px'
+                        }}>
+                          No highlighted subjects
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

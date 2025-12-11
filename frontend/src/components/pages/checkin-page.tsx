@@ -17,15 +17,16 @@ export function CheckinPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Check if user already has stored credentials
-    const storedUserId = localStorage.getItem("userId");
-    const storedUsername = localStorage.getItem("username");
+    // Check if user already has stored credentials using consistent key
+    const storedUserId = localStorage.getItem("checkin_userId");
+    const storedUsername = localStorage.getItem("checkin_username");
 
     if (storedUserId && storedUsername) {
       setUserId(storedUserId);
       setUsername(storedUsername);
       setIsRegistered(true);
       checkUserStatus(storedUserId);
+      console.log("Auto-logged in user:", storedUsername, "with ID:", storedUserId);
     }
 
     fetchCurrentCount();
@@ -88,11 +89,12 @@ export function CheckinPage() {
     setUserId(newUserId);
     setIsRegistered(true);
 
-    // Store in localStorage
-    localStorage.setItem("userId", newUserId);
-    localStorage.setItem("username", username);
+    // Store in localStorage with consistent keys
+    localStorage.setItem("checkin_userId", newUserId);
+    localStorage.setItem("checkin_username", username);
 
-    setMessage(`Your User ID is ${newUserId}. Please save this ID for future use.`);
+    console.log("User registered and saved:", username, "with ID:", newUserId);
+    setMessage(`Registered! Your User ID is ${newUserId}. You'll be automatically logged in next time.`);
   };
 
   const checkUserStatus = async (id: string) => {
@@ -179,6 +181,21 @@ export function CheckinPage() {
     setLoading(false);
   };
 
+  const handleClearLogin = () => {
+    // Clear stored login data
+    localStorage.removeItem("checkin_userId");
+    localStorage.removeItem("checkin_username");
+
+    // Reset component state
+    setUserId("");
+    setUsername("");
+    setIsRegistered(false);
+    setIsCheckedIn(false);
+    setMessage("Login cleared. You can now register a new user.");
+
+    console.log("User login data cleared");
+  };
+
   return (
     <div className="h-screen overflow-hidden flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full mx-4">
@@ -216,8 +233,9 @@ export function CheckinPage() {
             ) : (
               <div className="space-y-4">
                 <div className="text-center">
-                  <p className="text-gray-600">Welcome, {username}!</p>
+                  <p className="text-gray-600">Welcome back, {username}!</p>
                   <p className="text-sm text-gray-500">Your ID: {userId}</p>
+                  <p className="text-xs text-blue-600 mt-1">✓ Automatically logged in</p>
                 </div>
 
                 {/* Status Badge */}
@@ -253,15 +271,7 @@ export function CheckinPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      localStorage.removeItem("userId");
-                      localStorage.removeItem("username");
-                      setIsRegistered(false);
-                      setUserId("");
-                      setUsername("");
-                      setIsCheckedIn(false);
-                      setMessage("");
-                    }}
+                    onClick={handleClearLogin}
                   >
                     Use Different Account
                   </Button>
