@@ -14,9 +14,14 @@ import {
   CheckCircle
 } from "lucide-react";
 import Link from "next/link";
+import { AnnouncementsBanner } from "@/components/home/AnnouncementsBanner";
+import { EventCalendar } from "@/components/calendar/EventCalendar";
+import { useAuth } from "@/hooks/useAuth";
 
 // Cache-busting comment: Updated 2024-12-09 - Force refresh for button changes
 export function HomePage() {
+  const { isAuthenticated } = useAuth();
+
   const pillars = [
     {
       name: "Scholarship",
@@ -121,6 +126,9 @@ export function HomePage() {
           </p>
         </section>
 
+        {/* Announcements */}
+        <AnnouncementsBanner />
+
         {/* The Four Pillars - Expanded */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
@@ -176,6 +184,19 @@ export function HomePage() {
               </Card>
             ))}
           </div>
+        </section>
+
+        {/* Volunteer Events Calendar */}
+        <section className="mb-12">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Upcoming Volunteer Events
+            </h2>
+            <p className="text-gray-600">
+              View and sign up for volunteer opportunities
+            </p>
+          </div>
+          <EventCalendar isAuthenticated={isAuthenticated} />
         </section>
 
         {/* Chapter Meetings Section - Updated Design */}

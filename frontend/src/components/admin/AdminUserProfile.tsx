@@ -4,8 +4,20 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, ArrowLeft, Clock, Award, Lightbulb, Heart, BarChart3, GraduationCap, PieChart, TrendingUp, Calendar, Target, CheckCircle, Activity } from "lucide-react";
+import { User, ArrowLeft, Clock, Award, Lightbulb, Heart, BarChart3, GraduationCap, PieChart, TrendingUp, Calendar, Target, CheckCircle, Activity, Briefcase, Check, AlertCircle, ChevronDown, ChevronUp, MessageCircle, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { SubjectsPieChart } from "@/components/charts/SubjectsPieChart";
+
+interface Comment {
+  id: string;
+  submission_id: string;
+  author_type: 'admin' | 'student';
+  author_id: string;
+  author_name: string;
+  message: string;
+  created_at: string;
+}
 
 interface UserProfile {
   user: {
@@ -43,6 +55,35 @@ interface UserProfile {
     status: string;
     created_at: string;
   }>;
+  monthlyService: Array<{
+    id: string;
+    user_id: string;
+    month: string;
+    description: string;
+    status: 'submitted' | 'approved' | 'flagged';
+    admin_notes?: string;
+    student_feedback?: string;
+    reviewed_at?: string;
+    resubmitted_at?: string;
+    created_at: string;
+  }>;
+  ispSubmissions: {
+    project: {
+      id: string;
+      project_title: string;
+      status: string;
+    };
+    checkins: Array<{
+      id: string;
+      quarter: string;
+      progress_update: string;
+      status: 'submitted' | 'approved' | 'flagged';
+      admin_notes?: string;
+      student_feedback?: string;
+      reviewed_at?: string;
+      created_at: string;
+    }>;
+  } | null;
 }
 
 export function AdminUserProfile() {
@@ -51,6 +92,22 @@ export function AdminUserProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  // State for expandable sections
+  const [expandedMonthlyService, setExpandedMonthlyService] = useState<string | null>(null);
+  const [expandedISP, setExpandedISP] = useState<string | null>(null);
+
+  // State for inline feedback
+  const [monthlyServiceFeedback, setMonthlyServiceFeedback] = useState<Record<string, string>>({});
+  const [monthlyServiceNotes, setMonthlyServiceNotes] = useState<Record<string, string>>({});
+  const [ispFeedback, setISPFeedback] = useState<Record<string, string>>({});
+  const [ispNotes, setISPNotes] = useState<Record<string, string>>({});
+
+  // State for conversation threads
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
 
   const userId = params.userId as string;
 
@@ -78,6 +135,184 @@ export function AdminUserProfile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch comments when expanding a monthly service submission
+  useEffect(() => {
+    if (expandedMonthlyService && profile) {
+      const submission = profile.monthlyService.find(s => s.id === expandedMonthlyService);
+      if ((submission?.status === 'flagged' || submission?.resubmitted_at) && !comments[expandedMonthlyService]) {
+        fetchComments(expandedMonthlyService);
+      }
+    }
+  }, [expandedMonthlyService, profile]);
+
+  const fetchComments = async (submissionId: string) => {
+    setLoadingComments(prev => ({ ...prev, [submissionId]: true }));
+    try {
+      const response = await fetch(`/api/monthly-service/${submissionId}/comments`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => ({ ...prev, [submissionId]: data }));
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoadingComments(prev => ({ ...prev, [submissionId]: false }));
+    }
+  };
+
+  const handleSendComment = async (submissionId: string) => {
+    const commentText = newComment[submissionId]?.trim();
+    if (!commentText) return;
+
+    try {
+      const response = await fetch(`/api/monthly-service/${submissionId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author_type: 'admin',
+          author_id: 'admin',
+          author_name: 'NHS Admin',
+          message: commentText
+        })
+      });
+
+      if (response.ok) {
+        setNewComment(prev => ({ ...prev, [submissionId]: '' }));
+        fetchComments(submissionId);
+      } else {
+        const data = await response.json();
+        setMessage(data.error || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending comment:', error);
+      setMessage('Error sending message');
+    }
+  };
+
+  const formatCommentTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const handleReviewMonthlyService = async (submissionId: string, status: 'approved' | 'flagged') => {
+    try {
+      const response = await fetch('/api/monthly-service', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          status,
+          admin_notes: monthlyServiceNotes[submissionId] || null,
+          student_feedback: monthlyServiceFeedback[submissionId] || null,
+          reviewed_by: 'admin'
+        })
+      });
+
+      if (response.ok) {
+        setMessage(`Monthly service submission ${status}!`);
+        fetchUserProfile();
+        setExpandedMonthlyService(null);
+        // Clear feedback for this submission
+        setMonthlyServiceFeedback(prev => {
+          const next = { ...prev };
+          delete next[submissionId];
+          return next;
+        });
+        setMonthlyServiceNotes(prev => {
+          const next = { ...prev };
+          delete next[submissionId];
+          return next;
+        });
+      } else {
+        const data = await response.json();
+        setMessage(data.error || 'Failed to review submission');
+      }
+    } catch (err) {
+      console.error('Error reviewing monthly service:', err);
+      setMessage('Error reviewing submission');
+    }
+  };
+
+  const handleReviewISP = async (submissionId: string, status: 'approved' | 'flagged') => {
+    try {
+      const response = await fetch('/api/isp/semester', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          status,
+          admin_notes: ispNotes[submissionId] || null,
+          student_feedback: ispFeedback[submissionId] || null,
+          reviewed_by: 'admin'
+        })
+      });
+
+      if (response.ok) {
+        setMessage(`ISP submission ${status}!`);
+        fetchUserProfile();
+        setExpandedISP(null);
+        // Clear feedback for this submission
+        setISPFeedback(prev => {
+          const next = { ...prev };
+          delete next[submissionId];
+          return next;
+        });
+        setISPNotes(prev => {
+          const next = { ...prev };
+          delete next[submissionId];
+          return next;
+        });
+      } else {
+        const data = await response.json();
+        setMessage(data.error || 'Failed to review submission');
+      }
+    } catch (err) {
+      console.error('Error reviewing ISP:', err);
+      setMessage('Error reviewing submission');
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+            <Check className="h-3 w-3" /> Approved
+          </span>
+        );
+      case 'flagged':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">
+            <AlertCircle className="h-3 w-3" /> Flagged
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+            <Clock className="h-3 w-3" /> Pending
+          </span>
+        );
+    }
+  };
+
+  const getMonthName = (monthKey: string): string => {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    const [year, month] = monthKey.split('-');
+    return `${months[parseInt(month) - 1]} ${year}`;
+  };
+
+  const getSemesterName = (semester: string): string => {
+    const [year, term] = semester.split('-');
+    return `${term} ${year}`;
   };
 
   const formatDateTime = (dateString: string) => {
@@ -582,6 +817,333 @@ export function AdminUserProfile() {
                   <p className="text-xs text-yellow-700 mt-2">
                     ⭐ = Highlighted subjects (shown on tutor status page)
                   </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Monthly Service Submissions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-royal-blue" />
+                  Monthly Service Submissions ({profile.monthlyService?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {message && (
+                  <div className={`mb-4 p-3 rounded-lg text-sm ${
+                    message.includes('Error') || message.includes('Failed')
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-green-50 text-green-700'
+                  }`}>
+                    {message}
+                  </div>
+                )}
+                {profile.monthlyService && profile.monthlyService.length > 0 ? (
+                  <div className="space-y-3">
+                    {profile.monthlyService.map((submission) => (
+                      <div key={submission.id} className="border rounded-lg">
+                        <div
+                          className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+                          onClick={() => setExpandedMonthlyService(
+                            expandedMonthlyService === submission.id ? null : submission.id
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="font-medium">{getMonthName(submission.month)}</div>
+                            {getStatusBadge(submission.status)}
+                            {submission.resubmitted_at && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700">
+                                🔄 Resubmitted
+                              </span>
+                            )}
+                          </div>
+                          {expandedMonthlyService === submission.id ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </div>
+
+                        {expandedMonthlyService === submission.id && (
+                          <div className="p-4 border-t bg-gray-50 space-y-4">
+                            <div className="p-3 bg-white rounded border">
+                              <h4 className="font-medium text-sm mb-2">Service Description</h4>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{submission.description}</p>
+                            </div>
+
+                            <div className="text-xs text-gray-500">
+                              Submitted: {formatDateTime(submission.created_at)}
+                              {submission.reviewed_at && (
+                                <> • Reviewed: {formatDateTime(submission.reviewed_at)}</>
+                              )}
+                            </div>
+
+                            {submission.status === 'submitted' && (
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="text-sm font-medium">Feedback for Student</label>
+                                  <Textarea
+                                    placeholder="Add feedback that the student will see..."
+                                    value={monthlyServiceFeedback[submission.id] || ''}
+                                    onChange={(e) => setMonthlyServiceFeedback({
+                                      ...monthlyServiceFeedback,
+                                      [submission.id]: e.target.value
+                                    })}
+                                    rows={2}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-500">Internal Notes (admin only)</label>
+                                  <Textarea
+                                    placeholder="Add internal notes..."
+                                    value={monthlyServiceNotes[submission.id] || ''}
+                                    onChange={(e) => setMonthlyServiceNotes({
+                                      ...monthlyServiceNotes,
+                                      [submission.id]: e.target.value
+                                    })}
+                                    rows={2}
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleReviewMonthlyService(submission.id, 'approved')}
+                                  >
+                                    <Check className="h-4 w-4 mr-1" /> Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleReviewMonthlyService(submission.id, 'flagged')}
+                                  >
+                                    <AlertCircle className="h-4 w-4 mr-1" /> Flag
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Only show feedback box if NOT flagged (since flagged submissions have feedback in conversation) */}
+                            {submission.student_feedback && submission.status !== 'flagged' && (
+                              <div className="p-3 bg-amber-50 rounded border border-amber-200">
+                                <p className="text-sm font-medium text-amber-800">Feedback (visible to student):</p>
+                                <p className="text-sm text-amber-700">{submission.student_feedback}</p>
+                              </div>
+                            )}
+
+                            {submission.admin_notes && (
+                              <div className="p-3 bg-gray-100 rounded border border-gray-200">
+                                <p className="text-sm font-medium text-gray-600">Internal Notes:</p>
+                                <p className="text-sm text-gray-500">{submission.admin_notes}</p>
+                              </div>
+                            )}
+
+                            {/* Conversation Thread for Flagged or Resubmitted Submissions */}
+                            {(submission.status === 'flagged' || submission.resubmitted_at) && (
+                              <div className="border rounded-lg overflow-hidden">
+                                <div className="bg-gray-100 p-3 border-b">
+                                  <h4 className="font-medium text-sm flex items-center gap-2">
+                                    <MessageCircle className="h-4 w-4" />
+                                    Conversation Thread
+                                  </h4>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Communicate with the student about this submission
+                                  </p>
+                                </div>
+
+                                <div className="p-3 max-h-48 overflow-y-auto bg-white">
+                                  {loadingComments[submission.id] ? (
+                                    <div className="text-center text-gray-500 py-4 text-sm">Loading messages...</div>
+                                  ) : comments[submission.id]?.length > 0 ? (
+                                    <div className="space-y-3">
+                                      {comments[submission.id].map((comment) => (
+                                        <div
+                                          key={comment.id}
+                                          className={`p-2 rounded-lg ${
+                                            comment.author_type === 'admin'
+                                              ? 'bg-red-50 border border-red-200 ml-4'
+                                              : 'bg-blue-50 border border-blue-200 mr-4'
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className={`w-2 h-2 rounded-full ${
+                                              comment.author_type === 'admin' ? 'bg-red-500' : 'bg-blue-500'
+                                            }`}></span>
+                                            <span className="text-xs font-medium">
+                                              {comment.author_type === 'admin' ? 'Admin' : comment.author_name}
+                                            </span>
+                                            <span className="text-xs text-gray-500">
+                                              {formatCommentTime(comment.created_at)}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.message}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center text-gray-500 py-4 text-sm">
+                                      No messages yet. Start the conversation below.
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="p-3 bg-gray-50 border-t">
+                                  <div className="flex gap-2">
+                                    <Input
+                                      placeholder="Type a message to the student..."
+                                      value={newComment[submission.id] || ''}
+                                      onChange={(e) => setNewComment({ ...newComment, [submission.id]: e.target.value })}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                          e.preventDefault();
+                                          handleSendComment(submission.id);
+                                        }
+                                      }}
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleSendComment(submission.id)}
+                                      disabled={!newComment[submission.id]?.trim()}
+                                    >
+                                      <Send className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No monthly service submissions</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ISP Submissions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-royal-blue" />
+                  Independent Service Project ({profile.ispSubmissions?.checkins?.length || 0} submissions)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {profile.ispSubmissions ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="font-medium text-blue-900">{profile.ispSubmissions.project.project_title}</div>
+                      <div className="text-sm text-blue-700">Project Status: {profile.ispSubmissions.project.status}</div>
+                    </div>
+
+                    {profile.ispSubmissions.checkins.length > 0 ? (
+                      <div className="space-y-3">
+                        {profile.ispSubmissions.checkins.map((checkin) => (
+                          <div key={checkin.id} className="border rounded-lg">
+                            <div
+                              className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+                              onClick={() => setExpandedISP(
+                                expandedISP === checkin.id ? null : checkin.id
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="font-medium">{getSemesterName(checkin.quarter)}</div>
+                                {getStatusBadge(checkin.status)}
+                              </div>
+                              {expandedISP === checkin.id ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </div>
+
+                            {expandedISP === checkin.id && (
+                              <div className="p-4 border-t bg-gray-50 space-y-4">
+                                <div className="p-3 bg-white rounded border">
+                                  <h4 className="font-medium text-sm mb-2">Semester Progress</h4>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{checkin.progress_update}</p>
+                                </div>
+
+                                <div className="text-xs text-gray-500">
+                                  Submitted: {formatDateTime(checkin.created_at)}
+                                  {checkin.reviewed_at && (
+                                    <> • Reviewed: {formatDateTime(checkin.reviewed_at)}</>
+                                  )}
+                                </div>
+
+                                {checkin.status === 'submitted' && (
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="text-sm font-medium">Feedback for Student</label>
+                                      <Textarea
+                                        placeholder="Add feedback that the student will see..."
+                                        value={ispFeedback[checkin.id] || ''}
+                                        onChange={(e) => setISPFeedback({
+                                          ...ispFeedback,
+                                          [checkin.id]: e.target.value
+                                        })}
+                                        rows={2}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-500">Internal Notes (admin only)</label>
+                                      <Textarea
+                                        placeholder="Add internal notes..."
+                                        value={ispNotes[checkin.id] || ''}
+                                        onChange={(e) => setISPNotes({
+                                          ...ispNotes,
+                                          [checkin.id]: e.target.value
+                                        })}
+                                        rows={2}
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        onClick={() => handleReviewISP(checkin.id, 'approved')}
+                                      >
+                                        <Check className="h-4 w-4 mr-1" /> Approve
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => handleReviewISP(checkin.id, 'flagged')}
+                                      >
+                                        <AlertCircle className="h-4 w-4 mr-1" /> Flag
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {checkin.student_feedback && (
+                                  <div className="p-3 bg-amber-50 rounded border border-amber-200">
+                                    <p className="text-sm font-medium text-amber-800">Feedback (visible to student):</p>
+                                    <p className="text-sm text-amber-700">{checkin.student_feedback}</p>
+                                  </div>
+                                )}
+
+                                {checkin.admin_notes && (
+                                  <div className="p-3 bg-gray-100 rounded border border-gray-200">
+                                    <p className="text-sm font-medium text-gray-600">Internal Notes:</p>
+                                    <p className="text-sm text-gray-500">{checkin.admin_notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-2">No semester submissions yet</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No ISP project created</p>
                 )}
               </CardContent>
             </Card>

@@ -192,6 +192,73 @@ export async function GET(
       suggestionsError = e;
     }
 
+    // Get user's monthly service submissions
+    let monthlyService = null;
+    let monthlyServiceError = null;
+    try {
+      const result = await supabase
+        .from('monthly_service_submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      monthlyService = result.data;
+      monthlyServiceError = result.error;
+    } catch (e) {
+      console.log('monthly_service_submissions table not available:', e);
+      monthlyServiceError = e;
+    }
+
+    // Get user's ISP submissions (via their project)
+    let ispSubmissions = null;
+    let ispError = null;
+    try {
+      // First get the user's project
+      const { data: project } = await supabase
+        .from('independent_projects')
+        .select('id, project_title, status')
+        .eq('user_id', userId)
+        .single();
+
+      if (project) {
+        const { data: checkins, error } = await supabase
+          .from('isp_checkins')
+          .select('*')
+          .eq('project_id', project.id)
+          .order('created_at', { ascending: false });
+
+        ispSubmissions = {
+          project,
+          checkins: checkins || []
+        };
+        ispError = error;
+      }
+    } catch (e) {
+      console.log('ISP tables not available:', e);
+      ispError = e;
+    }
+
+    // Get user's event signups
+    let eventSignups = null;
+    let eventSignupsError = null;
+    try {
+      const result = await supabase
+        .from('event_signups')
+        .select(`
+          *,
+          volunteer_events (
+            id, title, event_date, location,
+            volunteer_organizations (name, color)
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      eventSignups = result.data;
+      eventSignupsError = result.error;
+    } catch (e) {
+      console.log('event_signups table not available:', e);
+      eventSignupsError = e;
+    }
+
     const profileData = {
       user,
       stats: {
@@ -201,7 +268,10 @@ export async function GET(
       },
       recentSessions: sessions || [],
       volunteerInterests: volunteerInterests || [],
-      suggestions: suggestions || []
+      suggestions: suggestions || [],
+      monthlyService: monthlyService || [],
+      ispSubmissions: ispSubmissions || null,
+      eventSignups: eventSignups || []
     };
 
     // Check for any errors (non-critical)
@@ -209,6 +279,9 @@ export async function GET(
     if (sessionsError) console.error('Error fetching sessions:', sessionsError);
     if (volunteerError) console.error('Error fetching volunteer interests:', volunteerError);
     if (suggestionsError) console.error('Error fetching suggestions:', suggestionsError);
+    if (monthlyServiceError) console.error('Error fetching monthly service:', monthlyServiceError);
+    if (ispError) console.error('Error fetching ISP:', ispError);
+    if (eventSignupsError) console.error('Error fetching event signups:', eventSignupsError);
 
     return NextResponse.json(profileData);
 

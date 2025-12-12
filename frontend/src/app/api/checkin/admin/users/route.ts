@@ -2,9 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { decryptData, maskUserId } from '@/lib/encryption'
 
+// Helper to get current month key (YYYY-MM)
+function getCurrentMonthKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+// Helper to get current semester
+function getCurrentSemester(): string {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  if (month >= 9 && month <= 12) {
+    return `${year}-Fall`;
+  } else if (month >= 1 && month <= 5) {
+    return `${year}-Spring`;
+  } else {
+    return `${year}-Fall`;
+  }
+}
+
 // GET /api/checkin/admin/users - Get all users (admin only)
 export async function GET(_request: NextRequest) {
   try {
+    const currentMonth = getCurrentMonthKey();
+    const currentSemester = getCurrentSemester();
+
     // Get users from the main users table to access encrypted data
     const { data: users, error } = await supabase
       .from('users')
@@ -22,17 +48,64 @@ export async function GET(_request: NextRequest) {
       )
     }
 
+    // Get all monthly service submissions for current month
+    const { data: monthlyServices } = await supabase
+      .from('monthly_service_submissions')
+      .select('user_id')
+      .eq('month', currentMonth);
+
+    const monthlyServiceUserIds = new Set(monthlyServices?.map(s => s.user_id) || []);
+
+    // Get all ISP submissions for current semester
+    const { data: ispCheckins } = await supabase
+      .from('isp_checkins')
+      .select(`
+        project_id,
+        independent_projects!inner(user_id)
+      `)
+      .eq('quarter', currentSemester);
+
+    const ispUserIds = new Set(
+      ispCheckins?.map(c => {
+        // Handle nested join result - could be array or object depending on Supabase version
+        const project = c.independent_projects;
+        if (Array.isArray(project)) {
+          return (project[0] as { user_id: string })?.user_id;
+        }
+        return (project as unknown as { user_id: string })?.user_id;
+      }).filter(Boolean) || []
+    );
+
+    // Get session history for total hours
+    const { data: sessionHistory } = await supabase
+      .from('session_history')
+      .select('user_id, duration_ms');
+
+    // Build a map of user_id to total hours
+    const hoursMap = new Map<string, number>();
+    sessionHistory?.forEach(session => {
+      const current = hoursMap.get(session.user_id) || 0;
+      hoursMap.set(session.user_id, current + (session.duration_ms || 0));
+    });
+
     // Decrypt user IDs for admin panel but mask them for security
     const processedUsers = users?.map(user => {
       try {
         const decryptedUserId = decryptData(user.user_id)
+        const totalMs = hoursMap.get(decryptedUserId) || 0;
+        const totalHours = totalMs / (1000 * 60 * 60);
+
         return {
           ...user,
           userId: maskUserId(decryptedUserId), // Masked for display
           user_id: maskUserId(decryptedUserId), // For compatibility (masked)
           real_user_id: user.user_id, // Real database ID for deletion operations
+          decrypted_user_id: decryptedUserId, // For matching with other tables
           isCheckedIn: user.active_checkins && user.active_checkins.length > 0,
           checkedInAt: user.active_checkins?.[0]?.checked_in_at || null,
+          monthly_service_submitted: monthlyServiceUserIds.has(decryptedUserId),
+          isp_submitted: ispUserIds.has(decryptedUserId),
+          total_hours: parseFloat(totalHours.toFixed(2)),
           // Remove password hash from response
           password_hash: undefined
         }
@@ -43,8 +116,12 @@ export async function GET(_request: NextRequest) {
           userId: '***ERROR***',
           user_id: '***ERROR***',
           real_user_id: user.user_id, // Keep real ID even if decryption fails
+          decrypted_user_id: '',
           isCheckedIn: false,
           checkedInAt: null,
+          monthly_service_submitted: false,
+          isp_submitted: false,
+          total_hours: 0,
           password_hash: undefined
         }
       }

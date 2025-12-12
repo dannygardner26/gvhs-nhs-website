@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff, Trash2, Settings, Bus, BarChart3, MessageSquare, FileText } from "lucide-react";
+import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff, Trash2, Settings, Bus, Building2, Bell, Calendar, Briefcase } from "lucide-react";
 import { UserCard } from "@/components/admin/UserCard";
 import { ActiveUsersPanel } from "@/components/admin/ActiveUsersPanel";
-import { AdminOpportunityManager } from "@/components/admin/AdminOpportunityManager";
 import { TransportationManagement } from "@/components/admin/TransportationManager";
 import { NHSElementaryVisits } from "@/components/admin/NHSElementaryVisits";
+import { AdminOrganizationManager } from "@/components/admin/AdminOrganizationManager";
+import { AdminAnnouncementManager } from "@/components/admin/AdminAnnouncementManager";
+import { AdminMonthlyServiceReview } from "@/components/admin/AdminMonthlyServiceReview";
+import { AdminISPReview } from "@/components/admin/AdminISPReview";
+import { AdminUsersGrid } from "@/components/admin/AdminUsersGrid";
 
 interface User {
   userId: string;
@@ -405,10 +409,30 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="flex flex-wrap gap-1 h-auto p-1">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               General
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="organizations" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Orgs & Events
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              Announcements
+            </TabsTrigger>
+            <TabsTrigger value="monthly-service" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Monthly Service
+            </TabsTrigger>
+            <TabsTrigger value="isp" className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              ISP
             </TabsTrigger>
             <TabsTrigger value="elementary" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -418,29 +442,12 @@ export function AdminPanel() {
               <Bus className="w-4 h-4" />
               Transport
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="communications" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Messages
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Reports
-            </TabsTrigger>
           </TabsList>
 
           {/* Tab 1: General Admin */}
           <TabsContent value="general" className="space-y-6">
             {/* Active Users Panel */}
             <ActiveUsersPanel onForceCheckout={() => fetchUsers()} />
-
-            {/* Volunteer Opportunity Manager - Consolidated with Event Manager */}
-            <div className="mb-6">
-              <AdminOpportunityManager />
-            </div>
 
             {/* Opportunity Suggestions */}
         <Card className="mb-6">
@@ -578,83 +585,39 @@ export function AdminPanel() {
         </Card>
           </TabsContent>
 
-          {/* Tab 2: Elementary */}
+          {/* Tab: Users Grid */}
+          <TabsContent value="users" className="space-y-6">
+            <AdminUsersGrid onChangePin={handleChangePin} />
+          </TabsContent>
+
+          {/* Tab: Organizations & Events */}
+          <TabsContent value="organizations" className="space-y-6">
+            <AdminOrganizationManager />
+          </TabsContent>
+
+          {/* Tab: Announcements */}
+          <TabsContent value="announcements" className="space-y-6">
+            <AdminAnnouncementManager />
+          </TabsContent>
+
+          {/* Tab: Monthly Service Review */}
+          <TabsContent value="monthly-service" className="space-y-6">
+            <AdminMonthlyServiceReview />
+          </TabsContent>
+
+          {/* Tab: ISP Review */}
+          <TabsContent value="isp" className="space-y-6">
+            <AdminISPReview />
+          </TabsContent>
+
+          {/* Tab: Elementary */}
           <TabsContent value="elementary" className="space-y-6">
             <NHSElementaryVisits />
           </TabsContent>
 
-          {/* Tab 3: Transportation */}
+          {/* Tab: Transportation */}
           <TabsContent value="transportation" className="space-y-6">
             <TransportationManagement />
-          </TabsContent>
-
-          {/* Tab 4: Analytics - Coming Soon */}
-          <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="w-5 h-5 mr-2" />
-                  Analytics Dashboard
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center py-12">
-                <div className="space-y-4">
-                  <div className="text-6xl mb-4">📊</div>
-                  <h3 className="text-2xl font-semibold text-gray-700">Coming Soon</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Advanced analytics and reporting dashboard featuring volunteer hour tracking,
-                    participation trends, elementary school visit metrics, and transportation
-                    coordination insights.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab 5: Communications - Coming Soon */}
-          <TabsContent value="communications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MessageSquare className="w-5 h-5 mr-2" />
-                  Communications Center
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center py-12">
-                <div className="space-y-4">
-                  <div className="text-6xl mb-4">💬</div>
-                  <h3 className="text-2xl font-semibold text-gray-700">Coming Soon</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Centralized messaging system for sending announcements to NHS members,
-                    coordinating volunteer opportunities, and managing group communications
-                    for events and activities.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab 6: Reports - Coming Soon */}
-          <TabsContent value="reports" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="w-5 h-5 mr-2" />
-                  Reports & Export
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center py-12">
-                <div className="space-y-4">
-                  <div className="text-6xl mb-4">📄</div>
-                  <h3 className="text-2xl font-semibold text-gray-700">Coming Soon</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Generate and export detailed reports for volunteer hours, attendance records,
-                    member participation, and administrative documentation required for
-                    NHS compliance and record-keeping.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>

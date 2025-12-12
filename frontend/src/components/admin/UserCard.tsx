@@ -8,6 +8,7 @@ import { Key, ChevronDown, ChevronUp, Trash2, AlertTriangle, Clock, ExternalLink
 interface UserData {
   user_id?: string;
   userId?: string;
+  real_user_id?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -62,6 +63,8 @@ export function UserCard({
 
   // Use user_id field from database (confirmed from debug logs)
   const userId = user.user_id || user.userId || '';
+  // Use real_user_id for profile links (unmasked ID for API calls)
+  const realUserId = user.real_user_id || userId;
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,7 +91,7 @@ export function UserCard({
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <Link
-              href={`/admin/users/${userId}/profile`}
+              href={`/admin/users/${realUserId}/profile`}
               className="hover:underline"
               onClick={() => {
                 setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
