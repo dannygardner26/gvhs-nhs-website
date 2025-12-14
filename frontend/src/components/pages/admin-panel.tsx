@@ -6,15 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff, Trash2, Settings, Bus, Building2, Bell, Calendar, Briefcase } from "lucide-react";
+import { Shield, Users, LogOut, Lightbulb, Eye, EyeOff, Trash2, Settings, Bus, Building2, Bell } from "lucide-react";
 import { UserCard } from "@/components/admin/UserCard";
 import { ActiveUsersPanel } from "@/components/admin/ActiveUsersPanel";
 import { TransportationManagement } from "@/components/admin/TransportationManager";
 import { NHSElementaryVisits } from "@/components/admin/NHSElementaryVisits";
 import { AdminOrganizationManager } from "@/components/admin/AdminOrganizationManager";
 import { AdminAnnouncementManager } from "@/components/admin/AdminAnnouncementManager";
-import { AdminMonthlyServiceReview } from "@/components/admin/AdminMonthlyServiceReview";
-import { AdminISPReview } from "@/components/admin/AdminISPReview";
 import { AdminUsersGrid } from "@/components/admin/AdminUsersGrid";
 
 interface User {
@@ -426,14 +424,6 @@ export function AdminPanel() {
               <Bell className="w-4 h-4" />
               Announcements
             </TabsTrigger>
-            <TabsTrigger value="monthly-service" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Monthly Service
-            </TabsTrigger>
-            <TabsTrigger value="isp" className="flex items-center gap-2">
-              <Briefcase className="w-4 h-4" />
-              ISP
-            </TabsTrigger>
             <TabsTrigger value="elementary" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Elementary
@@ -598,16 +588,6 @@ export function AdminPanel() {
           {/* Tab: Announcements */}
           <TabsContent value="announcements" className="space-y-6">
             <AdminAnnouncementManager />
-          </TabsContent>
-
-          {/* Tab: Monthly Service Review */}
-          <TabsContent value="monthly-service" className="space-y-6">
-            <AdminMonthlyServiceReview />
-          </TabsContent>
-
-          {/* Tab: ISP Review */}
-          <TabsContent value="isp" className="space-y-6">
-            <AdminISPReview />
           </TabsContent>
 
           {/* Tab: Elementary */}

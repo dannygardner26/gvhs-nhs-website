@@ -9,8 +9,6 @@ import { User, BookOpen, Clock, Settings, Award, BarChart3, Edit, Save, X, Check
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SubjectsPieChart } from "@/components/charts/SubjectsPieChart";
-import { MonthlyServiceForm } from "@/components/service/MonthlyServiceForm";
-import { ISPDashboard } from "@/components/service/ISPDashboard";
 
 interface TutorStats {
   totalHours: number;
@@ -688,25 +686,6 @@ export function TutorProfilePage() {
                   )}
                 </CardContent>
               </Card>
-
-              {/* Service Submissions Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Monthly Service */}
-                {user?.userId && (
-                  <MonthlyServiceForm
-                    userId={user.userId}
-                    userName={user.username || `${user.firstName} ${user.lastName}`.trim()}
-                  />
-                )}
-
-                {/* Independent Service Project */}
-                {user?.userId && (
-                  <ISPDashboard
-                    userId={user.userId}
-                    userName={user.username || `${user.firstName} ${user.lastName}`.trim()}
-                  />
-                )}
-              </div>
 
               {/* Tutoring Subjects */}
               <Card>

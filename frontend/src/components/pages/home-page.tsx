@@ -9,8 +9,6 @@ import {
   Heart,
   Mail,
   Calendar,
-  Clock,
-  MapPin,
   CheckCircle
 } from "lucide-react";
 import Link from "next/link";
@@ -93,18 +91,6 @@ export function HomePage() {
         "Faculty recommendations and endorsements"
       ]
     }
-  ];
-
-  const meetingDates = [
-    { date: "September 10", note: null },
-    { date: "October 8", note: null },
-    { date: "November 12", note: null },
-    { date: "December 10", note: null },
-    { date: "January 14", note: null },
-    { date: "February 11", note: null },
-    { date: "March 11", note: null },
-    { date: "April 15", note: null },
-    { date: "May 20", note: "Juniors only" }
   ];
 
   return (
@@ -199,115 +185,24 @@ export function HomePage() {
           <EventCalendar isAuthenticated={isAuthenticated} />
         </section>
 
-        {/* Chapter Meetings Section - Updated Design */}
+        {/* Chapter Meetings Section - Compact */}
         <section className="mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-3">
-              <Calendar className="w-8 h-8 text-royal-blue" />
-              2024-2025 Chapter Meeting Dates
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Mark your calendars for our monthly NHS chapter meetings
-            </p>
-          </div>
-
-          <div className="max-w-5xl mx-auto">
-            {/* Important Notice */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-lg p-6 mb-8 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="bg-amber-100 rounded-full p-2">
-                  <CheckCircle className="w-5 h-5 text-amber-600" />
-                </div>
+          <Card className="shadow-md">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h3 className="font-semibold text-amber-900 mb-1">Attendance Required</h3>
-                  <p className="text-amber-800 text-sm leading-relaxed">
-                    You must attend either the morning OR afternoon meeting each month unless you have an
-                    excused absence from school for the day. Please share these dates with your parent(s)
-                    to avoid scheduling conflicts.
+                  <h3 className="font-bold text-lg text-gray-900 mb-1">2024-2025 Meeting Dates</h3>
+                  <p className="text-gray-600 text-sm">
+                    Sep 10, Oct 8, Nov 12, Dec 10, Jan 14, Feb 11, Mar 11, Apr 15, May 20 <span className="text-amber-600 font-medium">(Juniors only)</span>
                   </p>
                 </div>
+                <div className="text-sm text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+                  <span><strong>Times:</strong> 7:15 AM or 2:35 PM</span>
+                  <span><strong>Location:</strong> Auditorium</span>
+                </div>
               </div>
-            </div>
-
-            {/* Meeting Options & Location */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-blue-100 rounded-full p-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold text-blue-900">Morning Option</h3>
-                </div>
-                <p className="text-2xl font-bold text-blue-700">7:15 AM</p>
-                <p className="text-sm text-blue-600 mt-1">Before school starts</p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-blue-100 rounded-full p-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold text-blue-900">Afternoon Option</h3>
-                </div>
-                <p className="text-2xl font-bold text-blue-700">2:35 PM</p>
-                <p className="text-sm text-blue-600 mt-1">After school ends</p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-blue-100 rounded-full p-2">
-                    <MapPin className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold text-blue-900">Location</h3>
-                </div>
-                <p className="text-2xl font-bold text-blue-700">Auditorium</p>
-                <p className="text-sm text-blue-600 mt-1">Main building</p>
-              </div>
-            </div>
-
-            {/* Meeting Dates Calendar */}
-            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {meetingDates.map((meeting, idx) => {
-                    const isSpecial = meeting.note;
-                    return (
-                      <div
-                        key={idx}
-                        className="relative overflow-hidden rounded-xl p-4 text-center transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-br from-gray-50 to-slate-100 border border-gray-200 hover:from-gray-100 hover:to-gray-200 hover:border-gray-300"
-                      >
-                        {isSpecial && (
-                          <div className="absolute top-1 right-1">
-                            <div className="bg-gray-400 text-white text-xs font-bold px-2 py-1 rounded-full">
-                              Special
-                            </div>
-                          </div>
-                        )}
-                        <div className="mb-2">
-                          <Calendar className="w-5 h-5 mx-auto text-gray-400" />
-                        </div>
-                        <p className="font-bold text-lg text-gray-900 mb-1">{meeting.date}</p>
-                        {meeting.note && (
-                          <p className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
-                            {meeting.note}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-6 text-center">
-                  <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
-                    <CheckCircle className="w-4 h-4 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-800">
-                      Add these dates to your personal calendar
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Member Requirements & Contact - Side by Side */}
