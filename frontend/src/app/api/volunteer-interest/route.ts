@@ -18,11 +18,7 @@ export async function POST(request: NextRequest) {
       emergencyPhone,
       // Transportation data
       hasOwnRide,
-      drivingMinutes,
-      driverAddress,
-      passengerCapacity,
-      riderAddress,
-      rideNeeds
+      willingToTakeOthers
     } = await request.json();
 
     // Validate required fields
@@ -75,6 +71,8 @@ export async function POST(request: NextRequest) {
       submissionData.teacher_email = teacherEmail || null;
       submissionData.emergency_contact = emergencyContact || null;
       submissionData.emergency_phone = emergencyPhone || null;
+      submissionData.has_own_ride = hasOwnRide || null;
+      submissionData.willing_to_take_others = willingToTakeOthers || null;
     }
 
     const { data, error } = await supabase
@@ -91,44 +89,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle transportation data for NHS Elementary visits
-    if (eventId === 'nhs-elementary' && hasOwnRide && data?.id) {
-      try {
-        const transportationData: any = {
-          submission_id: data.id,
-          nhs_user_id: nhsUserId,
-          has_own_ride: hasOwnRide === 'yes',
-          created_at: new Date().toISOString()
-        };
-
-        if (hasOwnRide === 'yes') {
-          // Driver data
-          transportationData.is_driver = true;
-          transportationData.driving_minutes = drivingMinutes || 5;
-          transportationData.driver_address = driverAddress || null;
-          transportationData.passenger_capacity = passengerCapacity || 1;
-        } else {
-          // Rider data
-          transportationData.is_driver = false;
-          transportationData.rider_address = riderAddress || null;
-          transportationData.ride_needs = rideNeeds || 'both';
-        }
-
-        // Insert transportation data (gracefully handle if table doesn't exist)
-        const { error: transportError } = await supabase
-          .from('nhs_transportation_requests')
-          .insert(transportationData);
-
-        if (transportError) {
-          console.log('Transportation table may not exist:', transportError);
-          // Don't fail the main submission if transportation table doesn't exist
-        }
-      } catch (transportError) {
-        console.log('Error handling transportation data:', transportError);
-        // Don't fail the main submission if transportation handling fails
-      }
-    }
-
     return NextResponse.json({
       message: 'Interest submitted successfully',
       submissionId: data.id
@@ -143,8 +103,32 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    // If userId is provided, return that user's submissions
+    if (userId) {
+      const includeDetails = searchParams.get('includeDetails') === 'true';
+
+      const { data: submissions, error } = await supabase
+        .from('volunteer_interest_submissions')
+        .select(includeDetails ? '*' : 'event_id')
+        .eq('nhs_user_id', userId);
+
+      if (error) {
+        console.error('Error fetching user volunteer interests:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch submissions' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(submissions || []);
+    }
+
+    // Otherwise return all submissions with full details (for admin view)
     const { data: submissions, error } = await supabase
       .from('volunteer_interest_submissions')
       .select(`

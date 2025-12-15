@@ -16,14 +16,15 @@ const capitalizeSchoolName = (schoolValue: string) => {
 interface StudentVisitData {
   id: string;
   submissionId: string;
-  nhsUserId: string;
   name: string;
   email: string;
   school: string;
   teacherLastName: string;
+  teacherEmail: string;
   emergencyContact: string;
   emergencyPhone: string;
-  rideStatus: 'available-to-drive' | 'has-own-ride' | 'needs-ride';
+  hasOwnRide: string;
+  willingToTakeOthers: string;
   createdAt: string;
 }
 
@@ -36,7 +37,7 @@ interface VisitsData {
   };
 }
 
-type SortField = 'name' | 'email' | 'school' | 'teacherLastName' | 'emergencyContact' | 'rideStatus' | 'createdAt';
+type SortField = 'name' | 'email' | 'school' | 'teacherLastName' | 'hasOwnRide' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
 export function NHSElementaryVisits() {
@@ -107,9 +108,9 @@ export function NHSElementaryVisits() {
       let bVal: string | number = b[sortField];
 
       // Handle special cases
-      if (sortField === 'rideStatus') {
-        aVal = getRideStatusDisplay(a.rideStatus);
-        bVal = getRideStatusDisplay(b.rideStatus);
+      if (sortField === 'hasOwnRide') {
+        aVal = getRideStatusDisplay(a.hasOwnRide, a.willingToTakeOthers);
+        bVal = getRideStatusDisplay(b.hasOwnRide, b.willingToTakeOthers);
       } else if (sortField === 'createdAt') {
         aVal = new Date(a.createdAt).getTime();
         bVal = new Date(b.createdAt).getTime();
@@ -128,27 +129,23 @@ export function NHSElementaryVisits() {
     });
   };
 
-  const getRideStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'available-to-drive': return 'Available to Give Rides';
-      case 'has-own-ride': return 'Has Own Ride';
-      case 'needs-ride': return 'Needs a Ride';
-      default: return status;
+  const getRideStatusDisplay = (hasOwnRide: string, willingToTakeOthers: string) => {
+    if (hasOwnRide === 'yes') {
+      if (willingToTakeOthers === 'yes') return 'Has ride + Can take others';
+      return 'Has own ride';
     }
+    if (hasOwnRide === 'no') return 'Needs a ride';
+    return 'Not specified';
   };
 
-  const getRideStatusBadge = (status: string) => {
+  const getRideStatusBadge = (hasOwnRide: string, willingToTakeOthers: string) => {
     const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
-    switch (status) {
-      case 'available-to-drive':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case 'has-own-ride':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
-      case 'needs-ride':
-        return `${baseClasses} bg-orange-100 text-orange-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+    if (hasOwnRide === 'yes') {
+      if (willingToTakeOthers === 'yes') return `${baseClasses} bg-green-100 text-green-800`;
+      return `${baseClasses} bg-blue-100 text-blue-800`;
     }
+    if (hasOwnRide === 'no') return `${baseClasses} bg-orange-100 text-orange-800`;
+    return `${baseClasses} bg-gray-100 text-gray-800`;
   };
 
   const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
@@ -263,8 +260,8 @@ export function NHSElementaryVisits() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-royal-blue focus:border-transparent"
             >
               <option value="all">All Ride Statuses</option>
-              <option value="available-to-drive">Available to Give Rides</option>
-              <option value="has-own-ride">Has Own Ride</option>
+              <option value="has-ride-can-take">Has Ride + Can Take Others</option>
+              <option value="has-ride">Has Own Ride</option>
               <option value="needs-ride">Needs a Ride</option>
             </select>
           </div>
@@ -278,16 +275,16 @@ export function NHSElementaryVisits() {
               <div className="text-sm text-blue-800">Total Students</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{visitsData.summary.byRideStatus['available-to-drive'] || 0}</div>
-              <div className="text-sm text-green-800">Can Drive</div>
+              <div className="text-2xl font-bold text-green-600">{visitsData.summary.byRideStatus['has-ride-can-take'] || 0}</div>
+              <div className="text-sm text-green-800">Can Take Others</div>
             </div>
             <div className="bg-orange-50 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-orange-600">{visitsData.summary.byRideStatus['needs-ride'] || 0}</div>
               <div className="text-sm text-orange-800">Need Rides</div>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600">{visitsData.summary.byRideStatus['has-own-ride'] || 0}</div>
-              <div className="text-sm text-purple-800">Own Ride</div>
+              <div className="text-2xl font-bold text-purple-600">{visitsData.summary.byRideStatus['has-ride'] || 0}</div>
+              <div className="text-sm text-purple-800">Has Own Ride</div>
             </div>
           </div>
         )}
@@ -302,8 +299,8 @@ export function NHSElementaryVisits() {
                   <SortableHeader field="email">Email</SortableHeader>
                   <SortableHeader field="school">School</SortableHeader>
                   <SortableHeader field="teacherLastName">Teacher</SortableHeader>
-                  <SortableHeader field="rideStatus">Ride Status</SortableHeader>
-                  {showAddresses && <SortableHeader field="emergencyContact">Emergency Contact</SortableHeader>}
+                  <SortableHeader field="hasOwnRide">Transportation</SortableHeader>
+                  {showAddresses && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emergency Contact</th>}
                   <SortableHeader field="createdAt">Registered</SortableHeader>
                 </tr>
               </thead>
@@ -312,7 +309,6 @@ export function NHSElementaryVisits() {
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">{student.name}</div>
-                      <div className="text-sm text-gray-500">ID: {student.nhsUserId}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       {student.email}
@@ -324,8 +320,8 @@ export function NHSElementaryVisits() {
                       {student.teacherLastName || 'Not specified'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={getRideStatusBadge(student.rideStatus)}>
-                        {getRideStatusDisplay(student.rideStatus)}
+                      <span className={getRideStatusBadge(student.hasOwnRide, student.willingToTakeOthers)}>
+                        {getRideStatusDisplay(student.hasOwnRide, student.willingToTakeOthers)}
                       </span>
                     </td>
                     {showAddresses && (

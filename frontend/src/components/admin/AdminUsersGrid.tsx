@@ -9,8 +9,6 @@ import {
   Search,
   Filter,
   ExternalLink,
-  Check,
-  X,
   Clock,
   Users,
   ChevronUp,
@@ -27,15 +25,13 @@ interface UserData {
   email: string;
   isCheckedIn: boolean;
   checkedInAt: string | null;
-  monthly_service_submitted: boolean;
-  isp_submitted: boolean;
   total_hours: number;
   created_at: string;
 }
 
 type SortField = 'name' | 'total_hours' | 'created_at';
 type SortOrder = 'asc' | 'desc';
-type FilterStatus = 'all' | 'checked_in' | 'missing_monthly' | 'missing_isp';
+type FilterStatus = 'all' | 'checked_in';
 
 interface AdminUsersGridProps {
   onChangePin?: (email: string) => void;
@@ -91,16 +87,8 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
     }
 
     // Apply status filter
-    switch (filterStatus) {
-      case 'checked_in':
-        result = result.filter(user => user.isCheckedIn);
-        break;
-      case 'missing_monthly':
-        result = result.filter(user => !user.monthly_service_submitted);
-        break;
-      case 'missing_isp':
-        result = result.filter(user => !user.isp_submitted);
-        break;
+    if (filterStatus === 'checked_in') {
+      result = result.filter(user => user.isCheckedIn);
     }
 
     // Apply sorting
@@ -125,9 +113,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
 
   const stats = useMemo(() => ({
     total: users.length,
-    checkedIn: users.filter(u => u.isCheckedIn).length,
-    missingMonthly: users.filter(u => !u.monthly_service_submitted).length,
-    missingISP: users.filter(u => !u.isp_submitted).length
+    checkedIn: users.filter(u => u.isCheckedIn).length
   }), [users]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -155,7 +141,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Card
           className={`cursor-pointer transition-all ${filterStatus === 'all' ? 'ring-2 ring-blue-500' : ''}`}
           onClick={() => setFilterStatus('all')}
@@ -172,24 +158,6 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.checkedIn}</div>
             <div className="text-sm text-gray-500">Checked In Now</div>
-          </CardContent>
-        </Card>
-        <Card
-          className={`cursor-pointer transition-all ${filterStatus === 'missing_monthly' ? 'ring-2 ring-amber-500' : ''}`}
-          onClick={() => setFilterStatus('missing_monthly')}
-        >
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-amber-600">{stats.missingMonthly}</div>
-            <div className="text-sm text-gray-500">Missing Monthly</div>
-          </CardContent>
-        </Card>
-        <Card
-          className={`cursor-pointer transition-all ${filterStatus === 'missing_isp' ? 'ring-2 ring-red-500' : ''}`}
-          onClick={() => setFilterStatus('missing_isp')}
-        >
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.missingISP}</div>
-            <div className="text-sm text-gray-500">Missing ISP</div>
           </CardContent>
         </Card>
       </div>
@@ -216,8 +184,6 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
               >
                 <option value="all">All Users</option>
                 <option value="checked_in">Checked In Now</option>
-                <option value="missing_monthly">Missing Monthly Service</option>
-                <option value="missing_isp">Missing ISP</option>
               </select>
             </div>
           </div>
@@ -243,13 +209,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
                   Email
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                  Monthly
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                  ISP
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                  Library
+                  Library Status
                 </th>
                 <th
                   className="px-4 py-3 text-center text-sm font-semibold text-gray-900 cursor-pointer hover:bg-gray-100"
@@ -281,35 +241,15 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
                     {user.email}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {user.monthly_service_submitted ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100">
-                        <Check className="w-4 h-4 text-green-600" />
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100">
-                        <X className="w-4 h-4 text-red-600" />
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {user.isp_submitted ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100">
-                        <Check className="w-4 h-4 text-green-600" />
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100">
-                        <X className="w-4 h-4 text-red-600" />
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
                     {user.isCheckedIn ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         In Library
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-sm">-</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                        Not in Library
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">

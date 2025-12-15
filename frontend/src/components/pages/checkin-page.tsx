@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserCheck, UserX, Users } from "lucide-react";
+import { UserCheck, UserX, Users, AlertCircle, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 export function CheckinPage() {
   const [userId, setUserId] = useState("");
@@ -15,6 +16,10 @@ export function CheckinPage() {
   const [currentCount, setCurrentCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState<'missed_checkin' | 'forgot_checkout' | 'other'>('missed_checkin');
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   useEffect(() => {
     // Check if user already has stored credentials using consistent key
@@ -196,6 +201,42 @@ export function CheckinPage() {
     console.log("User login data cleared");
   };
 
+  const handleReportIssue = async () => {
+    if (!reportDetails.trim()) {
+      setMessage("Please provide some details about the issue.");
+      return;
+    }
+
+    setReportSubmitting(true);
+    try {
+      const response = await fetch("/api/checkin/report-issue", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          username,
+          issueType: reportType,
+          details: reportDetails,
+        }),
+      });
+
+      if (response.ok) {
+        setMessage("Issue reported! An admin will review it and adjust your hours if needed.");
+        setShowReportModal(false);
+        setReportDetails("");
+        setReportType('missed_checkin');
+      } else {
+        const data = await response.json();
+        setMessage(data.error || "Error submitting report");
+      }
+    } catch {
+      setMessage("Error connecting to server");
+    }
+    setReportSubmitting(false);
+  };
+
   return (
     <div className="h-screen overflow-hidden flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full mx-4">
@@ -267,13 +308,22 @@ export function CheckinPage() {
                   </Button>
                 )}
 
-                <div className="text-center">
+                <div className="flex gap-2 justify-center">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleClearLogin}
                   >
                     Use Different Account
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowReportModal(true)}
+                    className="text-amber-600 border-amber-300 hover:bg-amber-50"
+                  >
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    Report Issue
                   </Button>
                 </div>
               </div>
@@ -289,6 +339,116 @@ export function CheckinPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Report Issue Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowReportModal(false)}>
+          <Card className="w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2 text-amber-600">
+                  <AlertCircle className="w-5 h-5" />
+                  Report Check-in Issue
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setShowReportModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Use this form to notify admins if you had an issue with your check-in.
+              </p>
+
+              <div>
+                <Label>What happened?</Label>
+                <div className="space-y-2 mt-2">
+                  <label className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="issueType"
+                      checked={reportType === 'missed_checkin'}
+                      onChange={() => setReportType('missed_checkin')}
+                      className="text-amber-600"
+                    />
+                    <div>
+                      <div className="font-medium text-sm">Missed Check-in</div>
+                      <div className="text-xs text-gray-500">I was in the library but forgot to check in</div>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="issueType"
+                      checked={reportType === 'forgot_checkout'}
+                      onChange={() => setReportType('forgot_checkout')}
+                      className="text-amber-600"
+                    />
+                    <div>
+                      <div className="font-medium text-sm">Forgot to Check Out</div>
+                      <div className="text-xs text-gray-500">I left but forgot to check out (time is incorrect)</div>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="issueType"
+                      checked={reportType === 'other'}
+                      onChange={() => setReportType('other')}
+                      className="text-amber-600"
+                    />
+                    <div>
+                      <div className="font-medium text-sm">Other Issue</div>
+                      <div className="text-xs text-gray-500">Something else went wrong</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="reportDetails">
+                  Details <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="reportDetails"
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder={
+                    reportType === 'missed_checkin'
+                      ? "When were you in the library? (e.g., Period 3, about 45 minutes)"
+                      : reportType === 'forgot_checkout'
+                      ? "When did you actually leave? (e.g., Left at 2:30 PM but forgot to check out)"
+                      : "Please describe the issue..."
+                  }
+                  rows={3}
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleReportIssue}
+                  disabled={reportSubmitting || !reportDetails.trim()}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700"
+                >
+                  {reportSubmitting ? "Submitting..." : "Submit Report"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReportModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+
+              <p className="text-xs text-gray-500 text-center">
+                An admin will review your report and adjust your hours if needed.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

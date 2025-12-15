@@ -6,7 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, X, Heart } from 'lucide-react';
+import { Calendar, MapPin, X, Heart } from 'lucide-react';
 import { VolunteerInterestForm } from '@/components/forms/VolunteerInterestForm';
 import type { CalendarEvent } from '@/lib/types';
 
@@ -21,10 +21,6 @@ interface EventDetailsModalProps {
 
 function EventDetailsModal({ event, allEvents, onClose, onSignup, onExpressInterest, isAuthenticated }: EventDetailsModalProps) {
   if (!event) return null;
-
-  const spotsLeft = event.extendedProps.spotsAvailable
-    ? event.extendedProps.spotsAvailable - event.extendedProps.spotsFilled
-    : null;
 
   // Check if this is an NHS Elementary event
   const isElementaryEvent = event.extendedProps.organization === 'NHS Elementary Visits';
@@ -85,17 +81,6 @@ function EventDetailsModal({ event, allEvents, onClose, onSignup, onExpressInter
             </div>
           )}
 
-          {spotsLeft !== null && (
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-gray-500" />
-              <span>
-                {spotsLeft > 0
-                  ? `${spotsLeft} spots available`
-                  : 'Event is full'}
-              </span>
-            </div>
-          )}
-
           {event.extendedProps.description && (
             <p className="text-sm text-gray-600">{event.extendedProps.description}</p>
           )}
@@ -120,7 +105,7 @@ function EventDetailsModal({ event, allEvents, onClose, onSignup, onExpressInter
                 Express Interest
               </Button>
             ) : (
-              isAuthenticated && spotsLeft !== 0 && onSignup && (
+              isAuthenticated && onSignup && (
                 <Button
                   className="flex-1"
                   onClick={() => onSignup(event.id)}

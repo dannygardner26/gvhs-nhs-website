@@ -123,29 +123,6 @@ export function EligibilityPage() {
           </CardContent>
         </Card>
 
-        {/* Key Points */}
-        <Card className="mb-8 bg-amber-50 border-amber-200">
-          <CardHeader>
-            <CardTitle className="text-amber-800">Important Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-amber-900">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <span><strong>Membership is a privilege, not a right</strong> - It&apos;s an invitation to be a candidate for selection, not an application or election</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <span><strong>All Four Pillars are required</strong> - GVHS NHS requires demonstration of Scholarship, Leadership, Service, AND Character</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <span><strong>Quality over quantity</strong> - Consistent, sustained involvement in fewer activities is better than minimal activity in many</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
         {/* The Four Pillars */}
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           The Four Pillars of NHS
@@ -269,31 +246,24 @@ export function EligibilityPage() {
           </CardContent>
         </Card>
 
-        {/* Join Now Button */}
+        {/* Join Now Button / Info Message */}
         <div className="text-center my-12">
-          <Button
-            onClick={() => setButtonClicked(true)}
-            size="lg"
-            className={`bg-royal-blue hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg transition-all duration-500 ${
-              buttonClicked ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
-            }`}
-          >
-            Join NHS Now
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-
-          {/* Information paragraph that appears after button click */}
-          <div
-            className={`transition-all duration-700 ease-in-out ${
-              buttonClicked ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4 pointer-events-none'
-            }`}
-          >
-            <div className="max-w-2xl mx-auto mt-6 p-6 bg-blue-50 rounded-lg border border-blue-200">
+          {!buttonClicked ? (
+            <Button
+              onClick={() => setButtonClicked(true)}
+              size="lg"
+              className="bg-royal-blue hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg"
+            >
+              Join NHS Now
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          ) : (
+            <div className="max-w-2xl mx-auto p-6 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-gray-800 leading-relaxed">
                 NHS membership is by invitation only during the formal application period. All requirements above must be met by the start of your junior year. Applications open in September/October for qualified juniors and seniors. Keep building your scholarship, leadership, service, and character. When the application period opens, you will be ready to submit a strong candidate information form.
               </p>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Join Popup */}

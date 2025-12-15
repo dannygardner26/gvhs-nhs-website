@@ -7,26 +7,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Heart, Users, Camera, MapPin, Calendar, Gamepad2, HandHeart, Laptop, Mail, ExternalLink, BookOpen, Globe, Monitor, Sparkles, Building } from "lucide-react";
+import Image from "next/image";
 import { VolunteerInterestForm } from "@/components/forms/VolunteerInterestForm";
 import type { Organization, VolunteerEvent } from "@/lib/types";
 
 // Icon mapping for dynamic icon rendering
-const iconMap: Record<string, React.ReactNode> = {
-  "Users": <Users className="w-6 h-6" />,
-  "Gamepad2": <Gamepad2 className="w-6 h-6" />,
-  "HandHeart": <HandHeart className="w-6 h-6" />,
-  "Laptop": <Laptop className="w-6 h-6" />,
-  "Camera": <Camera className="w-6 h-6" />,
-  "Heart": <Heart className="w-6 h-6" />,
-  "BookOpen": <BookOpen className="w-6 h-6" />,
-  "Globe": <Globe className="w-6 h-6" />,
-  "Monitor": <Monitor className="w-6 h-6" />,
-  "Sparkles": <Sparkles className="w-6 h-6" />,
-  "Building": <Building className="w-6 h-6" />
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  "Users": Users,
+  "Gamepad2": Gamepad2,
+  "HandHeart": HandHeart,
+  "Laptop": Laptop,
+  "Camera": Camera,
+  "Heart": Heart,
+  "BookOpen": BookOpen,
+  "Globe": Globe,
+  "Monitor": Monitor,
+  "Sparkles": Sparkles,
+  "Building": Building
+};
+
+// Logo mapping for organizations with custom logos
+const logoMap: Record<string, string> = {
+  "kids-in-motion": "/images/kids-in-motion-logo.png",
+  "gvco-tech-seniors": "/images/gvco-logo.jpg"
 };
 
 interface OrganizationWithEvents extends Organization {
   upcomingEvents?: VolunteerEvent[];
+}
+
+interface SubmittedInterest {
+  event_id: string;
+  name: string;
+  email: string;
+  message: string;
+  preferred_contact: string;
+  preferred_school?: string;
+  teacher_last_name?: string;
+  teacher_email?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  has_own_ride?: string;
+  willing_to_take_others?: string;
+  created_at: string;
 }
 
 export function VolunteeringPage() {
@@ -46,10 +69,34 @@ export function VolunteeringPage() {
   const [formMessage, setFormMessage] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithEvents | null>(null);
   const [showInterestForm, setShowInterestForm] = useState(false);
+  const [submittedInterests, setSubmittedInterests] = useState<Map<string, SubmittedInterest>>(new Map());
 
   useEffect(() => {
     fetchOrganizationsAndEvents();
   }, []);
+
+  // Fetch user's submitted interests
+  useEffect(() => {
+    if (isAuthenticated && user?.userId) {
+      fetchSubmittedInterests();
+    }
+  }, [isAuthenticated, user?.userId]);
+
+  const fetchSubmittedInterests = async () => {
+    try {
+      const response = await fetch(`/api/volunteer-interest?userId=${user?.userId}&includeDetails=true`);
+      if (response.ok) {
+        const data = await response.json();
+        const interestsMap = new Map<string, SubmittedInterest>();
+        data.forEach((interest: SubmittedInterest) => {
+          interestsMap.set(interest.event_id, interest);
+        });
+        setSubmittedInterests(interestsMap);
+      }
+    } catch (error) {
+      console.error('Error fetching submitted interests:', error);
+    }
+  };
 
   const fetchOrganizationsAndEvents = async () => {
     try {
@@ -62,22 +109,24 @@ export function VolunteeringPage() {
       const orgsData = await orgsResponse.json();
       const eventsData = await eventsResponse.json();
 
-      // Match events to organizations
-      const orgsWithEvents: OrganizationWithEvents[] = orgsData.map((org: Organization) => {
-        const orgEvents = eventsData.filter((event: VolunteerEvent & { volunteer_organizations?: { id: string } }) =>
-          event.organization_id === org.id || event.volunteer_organizations?.id === org.id
-        );
-        // Get upcoming events (from today forward)
-        const today = new Date().toISOString().split('T')[0];
-        const upcomingEvents = orgEvents
-          .filter((e: VolunteerEvent) => e.event_date >= today)
-          .slice(0, 3); // Show max 3 upcoming events
+      // Match events to organizations, excluding NHS Meetings
+      const orgsWithEvents: OrganizationWithEvents[] = orgsData
+        .filter((org: Organization) => org.slug !== 'nhs-meetings') // Exclude NHS Meetings
+        .map((org: Organization) => {
+          const orgEvents = eventsData.filter((event: VolunteerEvent & { volunteer_organizations?: { id: string } }) =>
+            event.organization_id === org.id || event.volunteer_organizations?.id === org.id
+          );
+          // Get upcoming events (from today forward)
+          const today = new Date().toISOString().split('T')[0];
+          const upcomingEvents = orgEvents
+            .filter((e: VolunteerEvent) => e.event_date >= today)
+            .slice(0, 3); // Show max 3 upcoming events
 
-        return {
-          ...org,
-          upcomingEvents
-        };
-      });
+          return {
+            ...org,
+            upcomingEvents
+          };
+        });
 
       setOrganizations(orgsWithEvents);
     } catch (error) {
@@ -148,7 +197,8 @@ export function VolunteeringPage() {
   const renderContactAction = (org: OrganizationWithEvents) => {
     const hasWebsite = org.website;
     const hasEmail = org.contact_email;
-    const showInterest = hasEmail && (org.contact_email?.includes('morabito') || org.slug === 'interact-club');
+    // Always show Express Interest for NHS Elementary; also show for Interact Club and orgs with morabito email
+    const showInterest = org.slug === 'nhs-elementary' || org.slug === 'interact-club' || (hasEmail && org.contact_email?.includes('morabito'));
 
     return (
       <div className="space-y-2">
@@ -160,18 +210,23 @@ export function VolunteeringPage() {
         )}
 
         {/* Express Interest Button */}
-        {showInterest && (
-          <Button
-            className="w-full bg-green-600 hover:bg-green-700 mb-2"
-            onClick={() => {
-              setSelectedOrganization(org);
-              setShowInterestForm(true);
-            }}
-          >
-            <Heart className="w-4 h-4 mr-2" />
-            Express Interest
-          </Button>
-        )}
+        {showInterest && (() => {
+          const eventId = org.slug || org.id;
+          const existingSubmission = submittedInterests.get(eventId);
+          const hasSubmitted = !!existingSubmission;
+          return (
+            <Button
+              className={`w-full mb-2 ${hasSubmitted ? 'bg-green-700 hover:bg-green-800' : 'bg-green-600 hover:bg-green-700'}`}
+              onClick={() => {
+                setSelectedOrganization(org);
+                setShowInterestForm(true);
+              }}
+            >
+              <Heart className={`w-4 h-4 mr-2 ${hasSubmitted ? 'fill-white' : ''}`} />
+              {hasSubmitted ? 'View Submission' : 'Express Interest'}
+            </Button>
+          );
+        })()}
 
         {/* Website Link */}
         {hasWebsite && (
@@ -264,12 +319,27 @@ export function VolunteeringPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div
-                      className="p-2 rounded-lg text-white"
-                      style={{ backgroundColor: org.color }}
-                    >
-                      {iconMap[org.icon_name] || <Users className="w-6 h-6" />}
-                    </div>
+                    {logoMap[org.slug] ? (
+                      <div className="w-12 h-12 relative rounded-lg overflow-hidden bg-white flex items-center justify-center">
+                        <Image
+                          src={logoMap[org.slug]}
+                          alt={`${org.name} logo`}
+                          width={48}
+                          height={48}
+                          className="object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="p-2 rounded-lg text-white"
+                        style={{ backgroundColor: org.color }}
+                      >
+                        {(() => {
+                          const IconComponent = iconMap[org.icon_name] || Users;
+                          return <IconComponent className="w-6 h-6" />;
+                        })()}
+                      </div>
+                    )}
                     <div>
                       <CardTitle className="text-xl">{org.name}</CardTitle>
                     </div>
@@ -495,9 +565,14 @@ export function VolunteeringPage() {
               duration: "Varies",
               date: "Ongoing"
             }}
+            existingSubmission={submittedInterests.get(selectedOrganization.slug || selectedOrganization.id)}
             onClose={() => {
               setShowInterestForm(false);
               setSelectedOrganization(null);
+              // Refresh submitted interests to update the heart icon
+              if (isAuthenticated && user?.userId) {
+                fetchSubmittedInterests();
+              }
             }}
           />
         )}

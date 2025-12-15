@@ -18,33 +18,45 @@ interface VolunteerOpportunity {
   date: string;
 }
 
+interface ExistingSubmission {
+  event_id: string;
+  name: string;
+  email: string;
+  message: string;
+  preferred_contact: string;
+  preferred_school?: string;
+  teacher_last_name?: string;
+  teacher_email?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  has_own_ride?: string;
+  willing_to_take_others?: string;
+  created_at: string;
+}
+
 interface VolunteerInterestFormProps {
   opportunity: VolunteerOpportunity;
+  existingSubmission?: ExistingSubmission;
   onClose: () => void;
 }
 
-export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInterestFormProps) {
+export function VolunteerInterestForm({ opportunity, existingSubmission, onClose }: VolunteerInterestFormProps) {
   const { user, isAuthenticated } = useAuth();
+  const isViewMode = !!existingSubmission;
+
   const [formData, setFormData] = useState({
-    name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
-    email: user?.email || '',
-    message: '',
-    preferredContact: 'email',
+    name: existingSubmission?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+    email: existingSubmission?.email || user?.email || '',
+    message: existingSubmission?.message || '',
+    preferredContact: existingSubmission?.preferred_contact || 'email',
     // NHS Elementary specific fields
-    preferredSchool: '',
-    teacherLastName: '',
-    teacherEmail: '',
-    emergencyContact: '',
-    emergencyPhone: '',
-    // Transportation system
-    hasOwnRide: '',
-    // Driver fields
-    drivingMinutes: 5,
-    driverAddress: '',
-    passengerCapacity: 1,
-    // Rider fields
-    riderAddress: '',
-    rideNeeds: 'both'
+    preferredSchool: existingSubmission?.preferred_school || '',
+    teacherLastName: existingSubmission?.teacher_last_name || '',
+    teacherEmail: existingSubmission?.teacher_email || '',
+    emergencyContact: existingSubmission?.emergency_contact || '',
+    emergencyPhone: existingSubmission?.emergency_phone || '',
+    hasOwnRide: existingSubmission?.has_own_ride || '',
+    willingToTakeOthers: existingSubmission?.willing_to_take_others || ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -101,17 +113,8 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
             teacherEmail: formData.teacherEmail,
             emergencyContact: formData.emergencyContact,
             emergencyPhone: formData.emergencyPhone,
-            // Transportation data
             hasOwnRide: formData.hasOwnRide,
-            ...(formData.hasOwnRide === 'yes' && {
-              drivingMinutes: formData.drivingMinutes,
-              driverAddress: formData.driverAddress,
-              passengerCapacity: formData.passengerCapacity
-            }),
-            ...(formData.hasOwnRide === 'no' && {
-              riderAddress: formData.riderAddress,
-              rideNeeds: formData.rideNeeds
-            })
+            willingToTakeOthers: formData.willingToTakeOthers
           })
         }),
       });
@@ -188,6 +191,24 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
           </div>
         </CardHeader>
         <CardContent>
+          {/* View Mode Banner */}
+          {isViewMode && (
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
+              <div className="flex items-center gap-2 text-green-800 font-medium">
+                <Heart className="w-5 h-5 fill-green-600 text-green-600" />
+                Interest Already Submitted
+              </div>
+              <p className="text-sm text-green-700 mt-1">
+                Submitted on {new Date(existingSubmission!.created_at).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
+          )}
+
           <div className="bg-blue-50 p-4 rounded-lg mb-6">
             <h3 className="font-semibold text-blue-900 mb-2">{opportunity.title}</h3>
             <div className="text-sm text-blue-800 space-y-1">
@@ -245,14 +266,15 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
                 <h4 className="font-semibold text-blue-900 mb-3">🏫 Elementary School Visit Details</h4>
 
                 <div>
-                  <Label htmlFor="preferredSchool">Preferred School (Optional)</Label>
+                  <Label htmlFor="preferredSchool">Preferred School *</Label>
                   <select
                     id="preferredSchool"
                     value={formData.preferredSchool}
                     onChange={(e) => setFormData(prev => ({ ...prev, preferredSchool: e.target.value }))}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
                   >
-                    <option value="">No preference</option>
+                    <option value="">Select a school...</option>
                     <option value="charlestown">Charlestown Elementary</option>
                     <option value="sugartown">Sugartown Elementary</option>
                     <option value="general-wayne">General Wayne Elementary</option>
@@ -262,17 +284,18 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="teacherLastName">Period 7 Teacher LAST NAME ONLY</Label>
+                    <Label htmlFor="teacherLastName">Period 7 Teacher LAST NAME ONLY *</Label>
                     <Input
                       id="teacherLastName"
                       value={formData.teacherLastName}
                       onChange={(e) => setFormData(prev => ({ ...prev, teacherLastName: e.target.value }))}
                       placeholder="Smith"
                       className="mt-1"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="teacherEmail">Teacher Email (if known)</Label>
+                    <Label htmlFor="teacherEmail">Teacher Email *</Label>
                     <Input
                       id="teacherEmail"
                       type="email"
@@ -280,27 +303,14 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
                       onChange={(e) => setFormData(prev => ({ ...prev, teacherEmail: e.target.value }))}
                       placeholder="teacher@gvsd.org"
                       className="mt-1"
+                      required
                     />
                   </div>
                 </div>
 
-                {/* Transportation System */}
+                {/* Transportation */}
                 <div className="space-y-4">
-                  <h5 className="font-medium text-blue-800">🚗 Transportation</h5>
-
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <div className="flex items-start space-x-2">
-                      <div className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-white text-xs">🔒</span>
-                      </div>
-                      <div className="text-sm">
-                        <p className="font-medium text-gray-900 mb-1">Transportation Coordination & Privacy</p>
-                        <p className="text-gray-700">
-                          This system helps coordinate safe rides between NHS students. Your personal information and address are protected and only used for matching purposes. NHS coordinators facilitate all contact sharing to ensure student safety.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <h5 className="font-medium text-blue-800">🚗 Transportation *</h5>
 
                   <div className="space-y-3">
                     <label className="flex items-center space-x-2">
@@ -311,6 +321,7 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
                         checked={formData.hasOwnRide === 'yes'}
                         onChange={(e) => setFormData(prev => ({ ...prev, hasOwnRide: e.target.value }))}
                         className="border-gray-300 text-blue-600 focus:ring-blue-500"
+                        required
                       />
                       <span className="text-sm font-medium">I have my own ride</span>
                     </label>
@@ -323,141 +334,37 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
                         onChange={(e) => setFormData(prev => ({ ...prev, hasOwnRide: e.target.value }))}
                         className="border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium">I don't have my own ride</span>
+                      <span className="text-sm font-medium">I need a ride (we will coordinate)</span>
                     </label>
                   </div>
 
-                  {/* Driver Form */}
+                  {/* Follow-up question for drivers */}
                   {formData.hasOwnRide === 'yes' && (
-                    <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h6 className="font-medium text-blue-800 mb-3">🚗 Optional: Help Other Students</h6>
-
-                      <div>
-                        <Label htmlFor="drivingMinutes">How many minutes out of your way are you willing to drive?</Label>
-                        <div className="mt-2">
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm font-medium text-green-800 mb-2">Would you be willing to take another student who needs a ride?</p>
+                      <div className="space-y-2">
+                        <label className="flex items-center space-x-2">
                           <input
-                            type="range"
-                            id="drivingMinutes"
-                            min="1"
-                            max="15"
-                            value={formData.drivingMinutes}
-                            onChange={(e) => setFormData(prev => ({ ...prev, drivingMinutes: parseInt(e.target.value) }))}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            type="radio"
+                            name="willingToTakeOthers"
+                            value="yes"
+                            checked={formData.willingToTakeOthers === 'yes'}
+                            onChange={(e) => setFormData(prev => ({ ...prev, willingToTakeOthers: e.target.value }))}
+                            className="border-gray-300 text-green-600 focus:ring-green-500"
                           />
-                          <div className="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>1 min</span>
-                            <span className="font-medium text-green-600">{formData.drivingMinutes} minutes</span>
-                            <span>15+ min</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="driverAddress">Your Address (for matching nearby students)</Label>
-                        <Input
-                          id="driverAddress"
-                          value={formData.driverAddress}
-                          onChange={(e) => setFormData(prev => ({ ...prev, driverAddress: e.target.value }))}
-                          placeholder="123 Main St, City, PA 12345"
-                          className="mt-1"
-                        />
-                        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
-                          <p className="text-xs text-yellow-800">
-                            🔒 <strong>Privacy Protected:</strong> Your address will never be shared with other students. It's only used to calculate distances and suggest potential matches. Only NHS administrators can see addresses for coordination purposes.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="passengerCapacity">How many students can you take TO the school?</Label>
-                        <select
-                          id="passengerCapacity"
-                          value={formData.passengerCapacity}
-                          onChange={(e) => setFormData(prev => ({ ...prev, passengerCapacity: parseInt(e.target.value) }))}
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value={1}>1 student</option>
-                          <option value={2}>2 students</option>
-                          <option value={3}>3 students</option>
-                          <option value={4}>4 students</option>
-                          <option value={5}>5+ students</option>
-                        </select>
-                      </div>
-
-                      {/* Mock nearby students list */}
-                      <div className="bg-white p-3 border border-green-300 rounded-md">
-                        <h6 className="text-sm font-medium text-green-800 mb-2">Students near you who need rides:</h6>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <div>
-                              <span className="font-medium">Sarah M.</span>
-                              <span className="text-gray-600 ml-2">• Needs ride TO school</span>
-                            </div>
-                            <span className="text-green-600 text-xs">2.1 miles away</span>
-                          </div>
-                          <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <div>
-                              <span className="font-medium">Alex K.</span>
-                              <span className="text-gray-600 ml-2">• Needs ride TO and FROM school</span>
-                            </div>
-                            <span className="text-green-600 text-xs">3.5 miles away</span>
-                          </div>
-                          <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <div>
-                              <span className="font-medium">Jamie L.</span>
-                              <span className="text-gray-600 ml-2">• Needs ride FROM school</span>
-                            </div>
-                            <span className="text-green-600 text-xs">1.8 miles away</span>
-                          </div>
-                        </div>
-                        <div className="bg-blue-50 border border-blue-300 rounded p-2 mt-3">
-                          <p className="text-xs text-blue-800">
-                            🔒 <strong>Privacy Notice:</strong> These students' addresses are protected - you only see distances. After you submit this form, NHS coordinators will share contact information for students you can help, and students will receive your contact info to arrange rides safely.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Rider Form */}
-                  {formData.hasOwnRide === 'no' && (
-                    <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h6 className="font-medium text-blue-800 mb-3">🏠 Ride Request Information</h6>
-
-                      <div>
-                        <Label htmlFor="riderAddress">Your Address</Label>
-                        <Input
-                          id="riderAddress"
-                          value={formData.riderAddress}
-                          onChange={(e) => setFormData(prev => ({ ...prev, riderAddress: e.target.value }))}
-                          placeholder="123 Main St, City, PA 12345"
-                          className="mt-1"
-                        />
-                        <div className="bg-blue-50 border border-blue-200 rounded p-2 mt-2">
-                          <p className="text-xs text-blue-800">
-                            🔒 <strong>Privacy Protected:</strong> Your address will never be shown to other students. Only NHS administrators can see your address to help coordinate safe transportation matches. Drivers will only receive your general location (like "2.1 miles away") until you both agree to share contact information.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="rideNeeds">Do you need a ride TO school, FROM school, or BOTH?</Label>
-                        <select
-                          id="rideNeeds"
-                          value={formData.rideNeeds}
-                          onChange={(e) => setFormData(prev => ({ ...prev, rideNeeds: e.target.value }))}
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="to">TO school only</option>
-                          <option value="from">FROM school only</option>
-                          <option value="both">BOTH directions</option>
-                        </select>
-                      </div>
-
-                      <div className="bg-blue-50 p-3 border border-blue-200 rounded-md">
-                        <p className="text-sm text-blue-800">
-                          <strong>What happens next:</strong> Nearby students with cars will see that you need a ride and can contact you directly to offer transportation. You'll hear from potential drivers after they submit their forms.
-                        </p>
+                          <span className="text-sm">Yes, I can take another student</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="willingToTakeOthers"
+                            value="no"
+                            checked={formData.willingToTakeOthers === 'no'}
+                            onChange={(e) => setFormData(prev => ({ ...prev, willingToTakeOthers: e.target.value }))}
+                            className="border-gray-300 text-green-600 focus:ring-green-500"
+                          />
+                          <span className="text-sm">No, I cannot take others</span>
+                        </label>
                       </div>
                     </div>
                   )}
@@ -508,21 +415,33 @@ export function VolunteerInterestForm({ opportunity, onClose }: VolunteerInteres
             </div>
 
             <div className="flex gap-3">
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                {submitting ? "Submitting..." : "Express Interest"}
-              </Button>
-              <Button
-                type="button"
-                onClick={onClose}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
+              {isViewMode ? (
+                <Button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  Close
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {submitting ? "Submitting..." : "Express Interest"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={onClose}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              )}
             </div>
 
             {message && (
