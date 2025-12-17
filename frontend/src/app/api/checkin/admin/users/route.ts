@@ -48,38 +48,52 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // Get all monthly service submissions for current month
-    const { data: monthlyServices } = await supabase
-      .from('monthly_service_submissions')
-      .select('user_id')
-      .eq('month', currentMonth);
+    // Get all monthly service submissions for current month (optional - table may not exist)
+    let monthlyServiceUserIds = new Set<string>();
+    try {
+      const { data: monthlyServices } = await supabase
+        .from('monthly_service_submissions')
+        .select('user_id')
+        .eq('month', currentMonth);
+      monthlyServiceUserIds = new Set(monthlyServices?.map(s => s.user_id) || []);
+    } catch {
+      // Table may not exist - that's okay
+    }
 
-    const monthlyServiceUserIds = new Set(monthlyServices?.map(s => s.user_id) || []);
+    // Get all ISP submissions for current semester (optional - tables may not exist)
+    let ispUserIds = new Set<string>();
+    try {
+      const { data: ispCheckins } = await supabase
+        .from('isp_checkins')
+        .select(`
+          project_id,
+          independent_projects!inner(user_id)
+        `)
+        .eq('quarter', currentSemester);
 
-    // Get all ISP submissions for current semester
-    const { data: ispCheckins } = await supabase
-      .from('isp_checkins')
-      .select(`
-        project_id,
-        independent_projects!inner(user_id)
-      `)
-      .eq('quarter', currentSemester);
+      ispUserIds = new Set(
+        ispCheckins?.map(c => {
+          const project = c.independent_projects;
+          if (Array.isArray(project)) {
+            return (project[0] as { user_id: string })?.user_id;
+          }
+          return (project as unknown as { user_id: string })?.user_id;
+        }).filter(Boolean) || []
+      );
+    } catch {
+      // Tables may not exist - that's okay
+    }
 
-    const ispUserIds = new Set(
-      ispCheckins?.map(c => {
-        // Handle nested join result - could be array or object depending on Supabase version
-        const project = c.independent_projects;
-        if (Array.isArray(project)) {
-          return (project[0] as { user_id: string })?.user_id;
-        }
-        return (project as unknown as { user_id: string })?.user_id;
-      }).filter(Boolean) || []
-    );
-
-    // Get session history for total hours
-    const { data: sessionHistory } = await supabase
-      .from('session_history')
-      .select('user_id, duration_ms');
+    // Get session history for total hours (optional - may fail)
+    let sessionHistory: { user_id: string; duration_ms: number }[] | null = null;
+    try {
+      const { data } = await supabase
+        .from('session_history')
+        .select('user_id, duration_ms');
+      sessionHistory = data;
+    } catch {
+      // Table may not exist - that's okay
+    }
 
     // Build a map of user_id to total hours
     const hoursMap = new Map<string, number>();

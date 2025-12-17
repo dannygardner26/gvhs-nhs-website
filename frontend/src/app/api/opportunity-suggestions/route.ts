@@ -76,11 +76,11 @@ export async function GET(_request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      // Log error but return empty array instead of 500 to prevent UI breaking
       console.error('Error fetching opportunity suggestions:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch suggestions' },
-        { status: 500 }
-      );
+      return NextResponse.json({
+        suggestions: []
+      });
     }
 
     return NextResponse.json({
@@ -88,10 +88,10 @@ export async function GET(_request: NextRequest) {
     });
 
   } catch (error) {
+    // Return empty array on error to prevent UI breaking
     console.error('Error in opportunity suggestions GET API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      suggestions: []
+    });
   }
 }
