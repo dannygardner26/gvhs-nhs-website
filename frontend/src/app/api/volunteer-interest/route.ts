@@ -103,6 +103,84 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const {
+      eventId,
+      nhsUserId,
+      name,
+      email,
+      message,
+      preferredContact,
+      // NHS Elementary specific fields
+      preferredSchool,
+      teacherLastName,
+      teacherEmail,
+      emergencyContact,
+      emergencyPhone,
+      // Transportation data
+      hasOwnRide,
+      willingToTakeOthers
+    } = await request.json();
+
+    // Validate required fields
+    if (!eventId || !nhsUserId || !name || !email) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Build update data
+    const updateData: Record<string, unknown> = {
+      name,
+      email,
+      message: message || null,
+      preferred_contact: preferredContact || 'email',
+      updated_at: new Date().toISOString()
+    };
+
+    // Add NHS Elementary specific fields if this is an elementary school visit
+    if (eventId === 'nhs-elementary') {
+      updateData.preferred_school = preferredSchool || null;
+      updateData.teacher_last_name = teacherLastName || null;
+      updateData.teacher_email = teacherEmail || null;
+      updateData.emergency_contact = emergencyContact || null;
+      updateData.emergency_phone = emergencyPhone || null;
+      updateData.has_own_ride = hasOwnRide || null;
+      updateData.willing_to_take_others = willingToTakeOthers || null;
+    }
+
+    const { data, error } = await supabase
+      .from('volunteer_interest_submissions')
+      .update(updateData)
+      .eq('event_id', eventId)
+      .eq('nhs_user_id', nhsUserId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating volunteer interest submission:', error);
+      return NextResponse.json(
+        { error: 'Failed to update submission' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Submission updated successfully',
+      submission: data
+    });
+
+  } catch (error) {
+    console.error('Error in volunteer interest PUT API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

@@ -42,7 +42,7 @@ interface VolunteerInterestFormProps {
 
 export function VolunteerInterestForm({ opportunity, existingSubmission, onClose }: VolunteerInterestFormProps) {
   const { user, isAuthenticated } = useAuth();
-  const isViewMode = !!existingSubmission;
+  const isEditMode = !!existingSubmission; // Editing existing submission
 
   const [formData, setFormData] = useState({
     name: existingSubmission?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
@@ -94,36 +94,41 @@ export function VolunteerInterestForm({ opportunity, existingSubmission, onClose
 
     setSubmitting(true);
     try {
+      const payload = {
+        eventId: opportunity.id,
+        nhsUserId: user?.userId,
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+        preferredContact: formData.preferredContact,
+        // NHS Elementary specific fields
+        ...(opportunity.id === 'nhs-elementary' && {
+          preferredSchool: formData.preferredSchool,
+          teacherLastName: formData.teacherLastName,
+          teacherEmail: formData.teacherEmail,
+          emergencyContact: formData.emergencyContact,
+          emergencyPhone: formData.emergencyPhone,
+          hasOwnRide: formData.hasOwnRide,
+          willingToTakeOthers: formData.willingToTakeOthers
+        })
+      };
+
       const response = await fetch("/api/volunteer-interest", {
-        method: "POST",
+        method: isEditMode ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          eventId: opportunity.id,
-          nhsUserId: user?.userId,
-          name: formData.name,
-          email: formData.email,
-          message: formData.message,
-          preferredContact: formData.preferredContact,
-          // NHS Elementary specific fields
-          ...(opportunity.id === 'nhs-elementary' && {
-            preferredSchool: formData.preferredSchool,
-            teacherLastName: formData.teacherLastName,
-            teacherEmail: formData.teacherEmail,
-            emergencyContact: formData.emergencyContact,
-            emergencyPhone: formData.emergencyPhone,
-            hasOwnRide: formData.hasOwnRide,
-            willingToTakeOthers: formData.willingToTakeOthers
-          })
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        setMessage("Thank you! Your interest has been submitted. The organizer will contact you soon.");
+        setMessage(isEditMode
+          ? "Your submission has been updated successfully!"
+          : "Thank you! Your interest has been submitted. The organizer will contact you soon."
+        );
         setTimeout(() => {
           onClose();
-        }, 3000);
+        }, 2000);
       } else {
         const errorData = await response.json();
         setMessage(errorData.error || "Error submitting interest. Please try again.");
@@ -191,15 +196,15 @@ export function VolunteerInterestForm({ opportunity, existingSubmission, onClose
           </div>
         </CardHeader>
         <CardContent>
-          {/* View Mode Banner */}
-          {isViewMode && (
-            <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
-              <div className="flex items-center gap-2 text-green-800 font-medium">
-                <Heart className="w-5 h-5 fill-green-600 text-green-600" />
-                Interest Already Submitted
+          {/* Edit Mode Banner */}
+          {isEditMode && (
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+              <div className="flex items-center gap-2 text-blue-800 font-medium">
+                <Heart className="w-5 h-5 fill-blue-600 text-blue-600" />
+                Edit Your Submission
               </div>
-              <p className="text-sm text-green-700 mt-1">
-                Submitted on {new Date(existingSubmission!.created_at).toLocaleDateString('en-US', {
+              <p className="text-sm text-blue-700 mt-1">
+                Originally submitted on {new Date(existingSubmission!.created_at).toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -415,33 +420,24 @@ export function VolunteerInterestForm({ opportunity, existingSubmission, onClose
             </div>
 
             <div className="flex gap-3">
-              {isViewMode ? (
-                <Button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  Close
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  >
-                    {submitting ? "Submitting..." : "Express Interest"}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={onClose}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                </>
-              )}
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {submitting
+                  ? (isEditMode ? "Saving..." : "Submitting...")
+                  : (isEditMode ? "Save Changes" : "Express Interest")
+                }
+              </Button>
+              <Button
+                type="button"
+                onClick={onClose}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
             </div>
 
             {message && (
