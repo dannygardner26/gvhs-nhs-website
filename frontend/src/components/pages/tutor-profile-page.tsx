@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, BookOpen, Clock, Settings, Award, BarChart3, Edit, Save, X, CheckCircle, GraduationCap, PieChart } from "lucide-react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SubjectsPieChart } from "@/components/charts/SubjectsPieChart";
@@ -876,22 +877,22 @@ export function TutorProfilePage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button className="w-full" variant="outline" asChild>
-                    <a href="/tutor/checkin">
+                    <Link href="/tutor/checkin">
                       <Clock className="w-4 h-4 mr-2" />
                       Tutor Check-in
-                    </a>
+                    </Link>
                   </Button>
                   <Button className="w-full" variant="outline" asChild>
-                    <a href="/volunteering">
+                    <Link href="/volunteering">
                       <BookOpen className="w-4 h-4 mr-2" />
                       View Opportunities
-                    </a>
+                    </Link>
                   </Button>
                   <Button className="w-full" variant="outline" asChild>
-                    <a href="/eligibility">
+                    <Link href="/eligibility">
                       <Award className="w-4 h-4 mr-2" />
                       NHS Requirements
-                    </a>
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>

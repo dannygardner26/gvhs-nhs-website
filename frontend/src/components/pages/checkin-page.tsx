@@ -39,6 +39,18 @@ export function CheckinPage() {
         checkUserStatus(storedUserId); // Silent polling - no message
         fetchCurrentCount();
       }, 5000);
+
+      // Also re-fetch when window gains focus (e.g., user navigates back)
+      const handleFocus = () => {
+        checkUserStatus(storedUserId);
+        fetchCurrentCount();
+      };
+      window.addEventListener('focus', handleFocus);
+
+      return () => {
+        if (statusInterval) clearInterval(statusInterval);
+        window.removeEventListener('focus', handleFocus);
+      };
     }
 
     fetchCurrentCount();
