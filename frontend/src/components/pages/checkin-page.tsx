@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { UserCheck, UserX, Users, AlertCircle, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 export function CheckinPage() {
+  const pathname = usePathname();
   const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
@@ -20,6 +22,17 @@ export function CheckinPage() {
   const [reportType, setReportType] = useState<'missed_checkin' | 'forgot_checkout' | 'other'>('missed_checkin');
   const [reportDetails, setReportDetails] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  // Refetch data when navigating to this page
+  useEffect(() => {
+    fetchCurrentCount();
+    // Also check user status if logged in
+    const storedUserId = localStorage.getItem("checkin_userId");
+    if (storedUserId) {
+      checkUserStatus(storedUserId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(() => {
     // Check if user already has stored credentials using consistent key
