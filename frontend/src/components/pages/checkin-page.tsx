@@ -26,21 +26,31 @@ export function CheckinPage() {
     const storedUserId = localStorage.getItem("checkin_userId");
     const storedUsername = localStorage.getItem("checkin_username");
 
+    let statusInterval: NodeJS.Timeout | null = null;
+
     if (storedUserId && storedUsername) {
       setUserId(storedUserId);
       setUsername(storedUsername);
       setIsRegistered(true);
-      checkUserStatus(storedUserId);
-      console.log("Auto-logged in user:", storedUsername, "with ID:", storedUserId);
+      checkUserStatus(storedUserId, true); // Show message on initial load
+
+      // Set up real-time polling for check-in status (every 5 seconds)
+      statusInterval = setInterval(() => {
+        checkUserStatus(storedUserId); // Silent polling - no message
+        fetchCurrentCount();
+      }, 5000);
     }
 
     fetchCurrentCount();
 
     // Auto logout at specific times (period changes)
     checkAutoLogout();
-    const interval = setInterval(checkAutoLogout, 60000); // Check every minute
+    const autoLogoutInterval = setInterval(checkAutoLogout, 60000); // Check every minute
 
-    return () => clearInterval(interval);
+    return () => {
+      if (statusInterval) clearInterval(statusInterval);
+      clearInterval(autoLogoutInterval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -102,18 +112,15 @@ export function CheckinPage() {
     setMessage(`Registered! Your User ID is ${newUserId}. You'll be automatically logged in next time.`);
   };
 
-  const checkUserStatus = async (id: string) => {
+  const checkUserStatus = async (id: string, showMessage = false) => {
     try {
       const response = await fetch(`/api/checkin/status/${id}`);
       if (response.ok) {
         const data = await response.json();
-        console.log("Status check response:", data);
         setIsCheckedIn(data.isCheckedIn);
-        if (data.isCheckedIn) {
+        if (showMessage && data.isCheckedIn) {
           setMessage("You are currently checked in.");
         }
-      } else {
-        console.error("Status check failed:", response.status);
       }
     } catch (error) {
       console.error("Error checking user status:", error);
