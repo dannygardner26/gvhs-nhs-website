@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Bell, Plus, Edit, Trash2, Pin, AlertTriangle, Info, X } from 'lucide-react';
+import { Bell, Plus, Edit, Trash2, Pin, AlertTriangle, Info, X, Link } from 'lucide-react';
 import type { Announcement, CreateAnnouncementInput } from '@/lib/types';
 
 const priorityOptions = [
@@ -28,7 +28,8 @@ export function AdminAnnouncementManager() {
     priority: 'normal',
     is_pinned: false,
     created_by: 'admin',
-    expires_at: ''
+    expires_at: '',
+    link_url: ''
   });
 
   useEffect(() => {
@@ -58,11 +59,12 @@ export function AdminAnnouncementManager() {
     try {
       const payload = {
         ...form,
-        expires_at: form.expires_at || null
+        expires_at: form.expires_at || null,
+        ...(editingAnnouncement && { id: editingAnnouncement.id })
       };
 
       const response = await fetch(
-        editingAnnouncement ? `/api/announcements?id=${editingAnnouncement.id}` : '/api/announcements',
+        '/api/announcements',
         {
           method: editingAnnouncement ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -74,7 +76,7 @@ export function AdminAnnouncementManager() {
         setMessage(editingAnnouncement ? 'Announcement updated!' : 'Announcement created!');
         setShowForm(false);
         setEditingAnnouncement(null);
-        setForm({ title: '', content: '', priority: 'normal', is_pinned: false, created_by: 'admin', expires_at: '' });
+        setForm({ title: '', content: '', priority: 'normal', is_pinned: false, created_by: 'admin', expires_at: '', link_url: '' });
         fetchAnnouncements();
       } else {
         const data = await response.json();
@@ -108,17 +110,18 @@ export function AdminAnnouncementManager() {
       priority: announcement.priority,
       is_pinned: announcement.is_pinned,
       created_by: announcement.created_by,
-      expires_at: announcement.expires_at ? announcement.expires_at.split('T')[0] : ''
+      expires_at: announcement.expires_at ? announcement.expires_at.split('T')[0] : '',
+      link_url: announcement.link_url || ''
     });
     setShowForm(true);
   };
 
   const handleToggleActive = async (announcement: Announcement) => {
     try {
-      const response = await fetch(`/api/announcements?id=${announcement.id}`, {
+      const response = await fetch('/api/announcements', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !announcement.is_active })
+        body: JSON.stringify({ id: announcement.id, is_active: !announcement.is_active })
       });
 
       if (response.ok) {
@@ -152,7 +155,7 @@ export function AdminAnnouncementManager() {
           <Bell className="h-5 w-5" />
           Announcements
         </h2>
-        <Button onClick={() => { setShowForm(true); setEditingAnnouncement(null); setForm({ title: '', content: '', priority: 'normal', is_pinned: false, created_by: 'admin', expires_at: '' }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingAnnouncement(null); setForm({ title: '', content: '', priority: 'normal', is_pinned: false, created_by: 'admin', expires_at: '', link_url: '' }); }}>
           <Plus className="h-4 w-4 mr-1" /> New Announcement
         </Button>
       </div>
@@ -221,6 +224,19 @@ export function AdminAnnouncementManager() {
                 />
               </div>
             </div>
+            <div>
+              <Label>Link URL (optional)</Label>
+              <div className="relative mt-1">
+                <Input
+                  value={form.link_url || ''}
+                  onChange={(e) => setForm({ ...form, link_url: e.target.value })}
+                  placeholder="https://example.com"
+                  className="pl-9"
+                />
+                <Link className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Add a clickable link to the announcement</p>
+            </div>
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -257,6 +273,17 @@ export function AdminAnnouncementManager() {
                     )}
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{announcement.content}</p>
+                  {announcement.link_url && (
+                    <a
+                      href={announcement.link_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mb-2"
+                    >
+                      <Link className="h-3 w-3" />
+                      {announcement.link_url}
+                    </a>
+                  )}
                   <div className="flex items-center gap-4 text-xs text-gray-400">
                     <span>Created: {new Date(announcement.created_at).toLocaleDateString()}</span>
                     {announcement.expires_at && (

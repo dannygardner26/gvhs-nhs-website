@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// GET /api/announcements - Get all active announcements
-export async function GET() {
+// GET /api/announcements - Get announcements (optionally include inactive)
+export async function GET(request: NextRequest) {
   try {
-    const { data: announcements, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const includeInactive = searchParams.get('include_inactive') === 'true';
+
+    let query = supabase
       .from('announcements')
-      .select('*')
-      .eq('is_active', true)
-      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .select('*');
+
+    if (!includeInactive) {
+      query = query
+        .eq('is_active', true)
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+    }
+
+    const { data: announcements, error } = await query
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -28,7 +37,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, content, priority, is_pinned, expires_at, created_by } = body;
+    const { title, content, priority, is_pinned, expires_at, created_by, link_url } = body;
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
@@ -43,6 +52,7 @@ export async function POST(request: NextRequest) {
         is_pinned: is_pinned || false,
         expires_at: expires_at || null,
         created_by: created_by || 'admin',
+        link_url: link_url || null,
         is_active: true
       })
       .select()
@@ -64,7 +74,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, content, priority, is_pinned, expires_at, is_active } = body;
+    const { id, title, content, priority, is_pinned, expires_at, is_active, link_url } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Announcement ID required' }, { status: 400 });
@@ -78,7 +88,8 @@ export async function PUT(request: NextRequest) {
         priority,
         is_pinned,
         expires_at,
-        is_active
+        is_active,
+        link_url
       })
       .eq('id', id)
       .select()

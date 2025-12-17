@@ -67,6 +67,7 @@ export interface Announcement {
   is_pinned: boolean;
   created_by: string;
   expires_at?: string;
+  link_url?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -101,4 +102,5 @@ export interface CreateAnnouncementInput {
   is_pinned?: boolean;
   created_by: string;
   expires_at?: string;
+  link_url?: string;
 }

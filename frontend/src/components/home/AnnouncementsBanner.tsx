@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bell, AlertTriangle, Info, Pin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, AlertTriangle, Info, Pin, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Announcement } from '@/lib/types';
 
@@ -116,6 +116,17 @@ export function AnnouncementsBanner() {
                       <p className={`text-sm mt-1 ${config.textColor} opacity-90`}>
                         {announcement.content}
                       </p>
+                      {announcement.link_url && (
+                        <a
+                          href={announcement.link_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-1 text-sm mt-2 ${config.textColor} hover:underline font-medium`}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Learn more
+                        </a>
+                      )}
                       <p className="text-xs text-gray-500 mt-2">
                         {new Date(announcement.created_at).toLocaleDateString()}
                       </p>
@@ -146,6 +157,17 @@ export function AnnouncementsBanner() {
                       <p className={`text-sm mt-1 ${config.textColor} opacity-90`}>
                         {announcement.content}
                       </p>
+                      {announcement.link_url && (
+                        <a
+                          href={announcement.link_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-1 text-sm mt-2 ${config.textColor} hover:underline font-medium`}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Learn more
+                        </a>
+                      )}
                       <p className="text-xs text-gray-500 mt-2">
                         {new Date(announcement.created_at).toLocaleDateString()}
                       </p>
