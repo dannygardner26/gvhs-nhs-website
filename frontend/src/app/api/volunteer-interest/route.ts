@@ -196,11 +196,9 @@ export async function GET(request: NextRequest) {
         .eq('nhs_user_id', userId);
 
       if (error) {
+        // Return empty array instead of 500 to not break the page
         console.error('Error fetching user volunteer interests:', error);
-        return NextResponse.json(
-          { error: 'Failed to fetch submissions' },
-          { status: 500 }
-        );
+        return NextResponse.json([]);
       }
 
       return NextResponse.json(submissions || []);
@@ -216,11 +214,9 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      // Return empty submissions instead of 500
       console.error('Error fetching volunteer interest submissions:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch submissions' },
-        { status: 500 }
-      );
+      return NextResponse.json({ submissions: [] });
     }
 
     return NextResponse.json({
@@ -228,10 +224,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    // Return empty array on error to prevent UI breaking
     console.error('Error in volunteer interest GET API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json([]);
   }
 }

@@ -10,16 +10,17 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ count: 3 })
     }
 
-    const { count, error } = await supabase
+    // Use select and count the rows (more reliable than count query)
+    const { data, error } = await supabase
       .from('active_checkins')
-      .select('*', { count: 'exact', head: true })
+      .select('user_id')
 
     if (error) {
       console.error('Error getting checkin count:', error)
       return NextResponse.json({ count: 0 })
     }
 
-    return NextResponse.json({ count: count || 0 })
+    return NextResponse.json({ count: data?.length || 0 })
 
   } catch (error) {
     console.error('Error in count API:', error)
