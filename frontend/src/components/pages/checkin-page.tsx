@@ -41,6 +41,9 @@ export function CheckinPage() {
 
     let statusInterval: NodeJS.Timeout | null = null;
 
+    // Always fetch count immediately on mount
+    fetchCurrentCount();
+
     if (storedUserId && storedUsername) {
       setUserId(storedUserId);
       setUsername(storedUsername);
@@ -65,8 +68,6 @@ export function CheckinPage() {
         window.removeEventListener('focus', handleFocus);
       };
     }
-
-    fetchCurrentCount();
 
     // Auto logout at specific times (period changes)
     checkAutoLogout();
