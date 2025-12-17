@@ -22,6 +22,7 @@ export function Navbar() {
     { name: "Home", href: "/" },
     { name: "Volunteering", href: "/volunteering" },
     { name: "Eligibility", href: "/eligibility" },
+    { name: "Tutor Status", href: "/tutor/status" },
   ];
 
   // Secondary navigation - only visible when logged in
