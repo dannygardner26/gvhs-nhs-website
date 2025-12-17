@@ -229,7 +229,7 @@ export function VolunteeringPage() {
             rel="noopener noreferrer"
             className="w-full block"
           >
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+            <Button className={`w-full ${org.slug === 'kids-in-motion' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
               <ExternalLink className="w-4 h-4 mr-2" />
               Visit Website
             </Button>
