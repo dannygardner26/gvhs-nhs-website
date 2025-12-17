@@ -202,13 +202,6 @@ export function VolunteeringPage() {
 
     return (
       <div className="space-y-2">
-        {/* Warning Banner for NHS Elementary Visits */}
-        {org.slug === 'nhs-elementary' && (
-          <div className="w-full bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2 rounded-md text-xs font-medium text-center mb-2">
-            ⚠️ Not official signup - use Remind form
-          </div>
-        )}
-
         {/* Express Interest Button */}
         {showInterest && (() => {
           const eventId = org.slug || org.id;
@@ -372,14 +365,6 @@ export function VolunteeringPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Contact Info */}
-                {org.contact_email && (
-                  <div className="flex items-center text-sm text-gray-500 mb-4">
-                    <Mail className="w-4 h-4 mr-2" />
-                    {org.contact_email}
                   </div>
                 )}
 

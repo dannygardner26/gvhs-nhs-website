@@ -191,7 +191,7 @@ export function HomePage() {
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900 mb-1">2024-2025 Meeting Dates</h3>
+                  <h3 className="font-bold text-lg text-gray-900 mb-1">2025-2026 Meeting Dates</h3>
                   <p className="text-gray-600 text-sm">
                     Sep 10, Oct 8, Nov 12, Dec 10, Jan 14, Feb 11, Mar 11, Apr 15, May 20 <span className="text-amber-600 font-medium">(Juniors only)</span>
                   </p>

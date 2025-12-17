@@ -66,7 +66,7 @@ function EventDetailsModal({ event, allEvents, onClose, onSignup, onExpressInter
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-gray-500" />
-            <span>{new Date(event.start).toLocaleDateString('en-US', {
+            <span>{new Date(event.start + 'T00:00:00').toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
@@ -253,7 +253,7 @@ export function EventCalendar({ onSignup, isAuthenticated }: EventCalendarProps)
               description: interestFormEvent.extendedProps.description || 'NHS Elementary School Visit',
               location: interestFormEvent.extendedProps.location || 'Various Elementary Schools',
               duration: '2-3 hours',
-              date: new Date(interestFormEvent.start).toLocaleDateString('en-US', {
+              date: new Date(interestFormEvent.start + 'T00:00:00').toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',

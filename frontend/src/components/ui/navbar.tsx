@@ -22,6 +22,7 @@ export function Navbar() {
     { name: "Home", href: "/" },
     { name: "Volunteering", href: "/volunteering" },
     { name: "Eligibility", href: "/eligibility" },
+    { name: "Check-in", href: "/tutor/checkin" },
     { name: "Tutor Status", href: "/tutor/status" },
   ];
 
