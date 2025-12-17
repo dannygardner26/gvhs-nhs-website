@@ -155,13 +155,18 @@ export function CheckinPage() {
 
   const fetchCurrentCount = async () => {
     try {
-      const response = await fetch("/api/checkin/count");
+      const response = await fetch("/api/checkin/count", {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      console.log('[CHECKIN PAGE] Count API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('[CHECKIN PAGE] Count API returned:', data);
         setCurrentCount(data.count);
       }
     } catch (error) {
-      console.error("Error fetching count:", error);
+      console.error("[CHECKIN PAGE] Error fetching count:", error);
     }
   };
 
