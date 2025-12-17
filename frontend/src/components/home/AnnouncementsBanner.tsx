@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bell, AlertTriangle, Info, Pin, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import type { Announcement } from '@/lib/types';
 
 const priorityConfig = {
@@ -34,6 +35,87 @@ export function AnnouncementsBanner() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
+  const { user, isAuthenticated } = useAuth();
+
+  // Track which announcements have been marked as read this session
+  const markedAsReadRef = useRef<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const cardRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Mark an announcement as read when it becomes visible
+  const markAsRead = useCallback(async (announcementId: string) => {
+    if (!isAuthenticated || !user || markedAsReadRef.current.has(announcementId)) {
+      return;
+    }
+
+    // Mark as read immediately to prevent duplicate calls
+    markedAsReadRef.current.add(announcementId);
+
+    try {
+      await fetch(`/api/announcements/${announcementId}/read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.userId,
+          user_name: `${user.firstName} ${user.lastName}`.trim() || user.username
+        })
+      });
+    } catch (error) {
+      console.error('Error marking announcement as read:', error);
+      // Remove from set so it can be retried
+      markedAsReadRef.current.delete(announcementId);
+    }
+  }, [isAuthenticated, user]);
+
+  // Set up IntersectionObserver
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const announcementId = entry.target.getAttribute('data-announcement-id');
+            if (announcementId) {
+              markAsRead(announcementId);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 } // Trigger when 50% of the card is visible
+    );
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [isAuthenticated, markAsRead]);
+
+  // Observe cards when they're added to the map
+  useEffect(() => {
+    if (!observerRef.current || !isAuthenticated) return;
+
+    cardRefsMap.current.forEach((card) => {
+      observerRef.current?.observe(card);
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [announcements, isAuthenticated, isExpanded]);
+
+  // Callback ref to register announcement cards for observation
+  const setCardRef = useCallback((id: string) => (el: HTMLDivElement | null) => {
+    if (el) {
+      cardRefsMap.current.set(id, el);
+      observerRef.current?.observe(el);
+    } else {
+      const existingEl = cardRefsMap.current.get(id);
+      if (existingEl) {
+        observerRef.current?.unobserve(existingEl);
+      }
+      cardRefsMap.current.delete(id);
+    }
+  }, []);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -99,8 +181,12 @@ export function AnnouncementsBanner() {
             const Icon = config.icon;
 
             return (
-              <Card
+              <div
                 key={announcement.id}
+                ref={setCardRef(announcement.id)}
+                data-announcement-id={announcement.id}
+              >
+              <Card
                 className={`${config.bgColor} ${config.borderColor} border`}
               >
                 <CardContent className="p-4">
@@ -134,6 +220,7 @@ export function AnnouncementsBanner() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             );
           })}
 
@@ -143,8 +230,12 @@ export function AnnouncementsBanner() {
             const Icon = config.icon;
 
             return (
-              <Card
+              <div
                 key={announcement.id}
+                ref={setCardRef(announcement.id)}
+                data-announcement-id={announcement.id}
+              >
+              <Card
                 className={`${config.bgColor} ${config.borderColor} border`}
               >
                 <CardContent className="p-4">
@@ -175,6 +266,7 @@ export function AnnouncementsBanner() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             );
           })}
         </div>

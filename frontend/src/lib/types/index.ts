@@ -69,7 +69,18 @@ export interface Announcement {
   expires_at?: string;
   link_url?: string;
   is_active: boolean;
+  is_archived: boolean;
+  archived_at?: string;
   created_at: string;
+  read_count?: number;
+}
+
+export interface AnnouncementReadReceipt {
+  id: string;
+  announcement_id: string;
+  user_id: string;
+  user_name?: string;
+  read_at: string;
 }
 
 // Form input types

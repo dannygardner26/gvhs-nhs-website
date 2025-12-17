@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// GET /api/announcements - Get announcements (optionally include inactive)
+// GET /api/announcements - Get announcements with optional filters
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('include_inactive') === 'true';
+    const includeArchived = searchParams.get('include_archived') === 'true';
+    const archivedOnly = searchParams.get('archived_only') === 'true';
 
+    // Build base query with read count
     let query = supabase
       .from('announcements')
-      .select('*');
+      .select(`
+        *,
+        read_count:announcement_read_receipts(count)
+      `);
 
-    if (!includeInactive) {
+    if (archivedOnly) {
+      // Only get archived announcements
+      query = query.eq('is_archived', true);
+    } else if (!includeArchived) {
+      // Exclude archived by default
+      query = query.eq('is_archived', false);
+    }
+
+    if (!includeInactive && !archivedOnly) {
       query = query
         .eq('is_active', true)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
@@ -26,7 +40,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    return NextResponse.json(announcements || []);
+    // Transform the read_count from array to number
+    const transformedAnnouncements = (announcements || []).map(a => ({
+      ...a,
+      read_count: a.read_count?.[0]?.count || 0
+    }));
+
+    return NextResponse.json(transformedAnnouncements);
   } catch (error) {
     console.error('Error fetching announcements:', error);
     return NextResponse.json([]);
@@ -53,7 +73,8 @@ export async function POST(request: NextRequest) {
         expires_at: expires_at || null,
         created_by: created_by || 'admin',
         link_url: link_url || null,
-        is_active: true
+        is_active: true,
+        is_archived: false
       })
       .select()
       .single();
@@ -70,27 +91,35 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/announcements - Update announcement
+// PUT /api/announcements - Update announcement (including archive/restore)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, content, priority, is_pinned, expires_at, is_active, link_url } = body;
+    const { id, title, content, priority, is_pinned, expires_at, is_active, link_url, is_archived } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Announcement ID required' }, { status: 400 });
     }
 
+    // Build update object, only including fields that are provided
+    const updateData: Record<string, unknown> = {};
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (priority !== undefined) updateData.priority = priority;
+    if (is_pinned !== undefined) updateData.is_pinned = is_pinned;
+    if (expires_at !== undefined) updateData.expires_at = expires_at;
+    if (is_active !== undefined) updateData.is_active = is_active;
+    if (link_url !== undefined) updateData.link_url = link_url;
+
+    // Handle archiving
+    if (is_archived !== undefined) {
+      updateData.is_archived = is_archived;
+      updateData.archived_at = is_archived ? new Date().toISOString() : null;
+    }
+
     const { data, error } = await supabase
       .from('announcements')
-      .update({
-        title,
-        content,
-        priority,
-        is_pinned,
-        expires_at,
-        is_active,
-        link_url
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -107,7 +136,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/announcements - Soft delete announcement
+// DELETE /api/announcements - Permanently delete announcement
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -119,7 +148,7 @@ export async function DELETE(request: NextRequest) {
 
     const { error } = await supabase
       .from('announcements')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id);
 
     if (error) {
@@ -127,7 +156,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 });
     }
 
-    return NextResponse.json({ message: 'Announcement deleted' });
+    return NextResponse.json({ message: 'Announcement permanently deleted' });
   } catch (error) {
     console.error('Error in announcement DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
