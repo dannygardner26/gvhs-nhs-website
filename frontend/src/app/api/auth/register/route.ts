@@ -2,39 +2,57 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { encryptData } from '@/lib/encryption'
+import { z } from 'zod'
+import { rateLimit } from '@/lib/rate-limit'
 
-// POST /api/auth/register - Register new user (no auto check-in)
+// Rate limiter: 5 requests per minute
+const limiter = rateLimit({
+  interval: 60 * 1000, // 60 seconds
+  uniqueTokenPerInterval: 500, // Max 500 users per second
+})
+
+// Validation Schema
+const registerSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters").regex(/^[a-zA-Z\s-]+$/, "Name contains invalid characters").max(50),
+  lastName: z.string().min(2, "Last name must be at least 2 characters").regex(/^[a-zA-Z\s-]+$/, "Name contains invalid characters").max(50),
+  customUserId: z.string().length(6, "User ID must be exactly 6 digits").regex(/^\d+$/, "User ID must be numeric"),
+  email: z.string().email("Invalid email address").optional().or(z.literal('')),
+  password: z.string().min(6, "Password must be at least 6 characters").max(100),
+})
+
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, lastName, customUserId, email, password } = await request.json()
+    // 1. Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+    try {
+      await limiter.check(null, 5, ip)
+    } catch {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
 
-    if (!firstName || !lastName || !customUserId) {
+    const body = await request.json()
+
+    // 2. Input Validation
+    const validation = registerSchema.safeParse(body);
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'First name, last name, and user ID are required' },
+        { error: 'Validation Error', details: validation.error.format() },
         { status: 400 }
       )
     }
 
-    if (!password) {
-      return NextResponse.json(
-        { error: 'Password is required' },
-        { status: 400 }
-      )
-    }
+    const { firstName, lastName, customUserId, email, password } = validation.data
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      )
-    }
-
-    // Check if email is already taken (only if email provided)
-    if (email) {
+    // Check if email passes secondary checks (optional vs empty string)
+    let cleanEmail = null;
+    if (email && email.trim() !== "") {
+      cleanEmail = email.toLowerCase().trim();
+      // Check if email is already taken
       const { data: existingEmail } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email.toLowerCase())
+        .eq('email', cleanEmail)
         .single()
 
       if (existingEmail) {
@@ -87,7 +105,7 @@ export async function POST(request: NextRequest) {
         user_id: encryptedUserId,
         first_name: firstName,
         last_name: lastName,
-        email: email ? email.toLowerCase() : null,
+        email: cleanEmail,
         password_hash: encryptedPasswordHash
       })
       .select()
@@ -101,13 +119,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // SUCCESS - Set Secure Cookie
+    await setUserSessionCookie(customUserId);
+
     return NextResponse.json({
       message: 'Registration successful!',
       id: newUser.id,
       userId: customUserId,
       firstName: firstName,
       lastName: lastName,
-      email: email
+      email: cleanEmail
     })
 
   } catch (error) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { setAdminCookie } from '@/lib/auth-admin';
 
 // POST /api/admin/auth - Authenticate admin PIN
 export async function POST(request: NextRequest) {
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
     // Check for master admin override first
     const masterAdminPin = process.env.MASTER_ADMIN_PIN || "EMERGENCY_OVERRIDE_2024";
     if (pin === masterAdminPin) {
+      await setAdminCookie();
       return NextResponse.json({
         success: true,
         message: 'Master admin access granted'
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest) {
     // Check against main admin PIN (simple string comparison)
     const adminPin = process.env.ADMIN_PIN || "Volunteeringisgreat";
     if (pin === adminPin) {
+      await setAdminCookie();
       return NextResponse.json({
         success: true,
         message: 'Admin access granted'

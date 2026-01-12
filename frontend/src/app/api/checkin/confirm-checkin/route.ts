@@ -1,33 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { verifyUserSession } from '@/lib/auth-session'
+import { rateLimit } from '@/lib/rate-limit'
+
+// Rate limiter: 10 requests per minute
+const limiter = rateLimit({
+  interval: 60 * 1000,
+  uniqueTokenPerInterval: 500,
+})
 
 // POST /api/checkin/confirm-checkin - Check in a verified user
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+    // 1. Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+    try {
+      await limiter.check(null, 10, ip)
+    } catch {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // Get user info
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { message: 'User not found' },
-        { status: 404 }
-      )
+    // 2. Auth Check
+    const session = await verifyUserSession(request);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized. Please login to check in.' }, { status: 401 });
     }
 
-    // Check if user is already checked in
+    const { userId } = session; // Use trusted ID from session
+
+    // Check if user is already checked in (using plain text ID in active_checkins)
     const { data: existingCheckin } = await supabase
       .from('active_checkins')
       .select('*')
@@ -61,8 +62,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Successfully checked in',
       userId,
-      firstName: user.first_name,
-      lastName: user.last_name,
       checkedInAt
     })
 

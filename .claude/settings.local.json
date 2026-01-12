@@ -16,7 +16,22 @@
       "Bash(tasklist)",
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
-      "Bash(supabase:*)"
+      "Bash(supabase:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx supabase:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(dir /b:*)",
+      "Bash(curl:*)",
+      "Bash(node_modules.bintsc:*)",
+      "Bash(dir:*)",
+      "Bash(npm ls:*)",
+      "Bash(start \"\" \"C:\\Users\\danny\\documents\\github\\gvhs-nhs-website\\DEMO_SCRIPT.md\")",
+      "Bash(git reset:*)",
+      "Bash(npx next build --no-turbopack)",
+      "Bash(git stash:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

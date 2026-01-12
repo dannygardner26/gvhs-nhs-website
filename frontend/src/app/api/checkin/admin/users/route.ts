@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { decryptData, maskUserId } from '@/lib/encryption'
+import { verifyAdminSession } from '@/lib/auth-admin';
 
 // Helper to get current month key (YYYY-MM)
 function getCurrentMonthKey(): string {
@@ -26,7 +27,11 @@ function getCurrentSemester(): string {
 }
 
 // GET /api/checkin/admin/users - Get all users (admin only)
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
+  // Check for admin session
+  const authError = await verifyAdminSession(request);
+  if (authError) return authError;
+
   try {
     const currentMonth = getCurrentMonthKey();
     const currentSemester = getCurrentSemester();

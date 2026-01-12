@@ -1,31 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { verifyUserSession } from '@/lib/auth-session'
+import { rateLimit } from '@/lib/rate-limit'
 
-// POST /api/checkin/verify-user - Verify existing user ID without checking in
+// Rate limiter: 10 requests per minute
+const limiter = rateLimit({
+  interval: 60 * 1000,
+  uniqueTokenPerInterval: 500,
+})
+
+// POST /api/checkin/verify-user - Verify existing user ID
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+    // 1. Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+    try {
+      await limiter.check(null, 10, ip)
+    } catch {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // Check if user exists in users table
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { message: 'User ID not found. Please check your ID or register as a new user.' },
-        { status: 404 }
-      )
+    // 2. Auth Check
+    const session = await verifyUserSession(request);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized. Please login first.' }, { status: 401 });
     }
+
+    const { userId } = session;
 
     // Check if user is already checked in
     const { data: existingCheckin } = await supabase
@@ -38,8 +39,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           message: 'User is already checked in',
-          firstName: user.first_name,
-          lastName: user.last_name,
           alreadyCheckedIn: true,
           checkedInAt: existingCheckin.checked_in_at
         },
@@ -47,14 +46,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // User exists and is not checked in - return their info for confirmation
+    // User exists and is not checked in
     return NextResponse.json({
       message: 'User verified successfully',
       userId,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      email: user.email,
-      highlightedSubjects: user.highlighted_subjects || [],
       verified: true
     })
 

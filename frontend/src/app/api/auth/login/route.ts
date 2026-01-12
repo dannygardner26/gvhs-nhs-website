@@ -2,10 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { decryptData } from '@/lib/encryption'
+import { rateLimit } from '@/lib/rate-limit'
+import { setUserSessionCookie } from '@/lib/auth-session'
 
-// POST /api/auth/login - Login with User ID or email and password (no auto check-in)
+// Rate limiter: 10 requests per minute
+const limiter = rateLimit({
+  interval: 60 * 1000,
+  uniqueTokenPerInterval: 500,
+})
+
+// POST /api/auth/login - Login with User ID or email and password
 export async function POST(request: NextRequest) {
   try {
+    // 1. Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+    try {
+      await limiter.check(null, 10, ip)
+    } catch {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
     const { userIdOrEmail, password } = await request.json()
 
     if (!userIdOrEmail || !password) {
@@ -25,6 +41,8 @@ export async function POST(request: NextRequest) {
 
     if (is6DigitId) {
       // Get all users and decrypt their user IDs to find a match
+      // Note: This is inefficient but necessary with app-level encryption. 
+      // In a real production app with millions of users, we'd hash the ID separately for lookup.
       const { data: allUsers } = await supabase
         .from('users')
         .select('*')
@@ -99,7 +117,12 @@ export async function POST(request: NextRequest) {
       }, { status: 401 })
     }
 
-    // Return user info (no check-in)
+    // SUCCESS - Set Secure Cookie
+    if (decryptedUserId) {
+      await setUserSessionCookie(decryptedUserId);
+    }
+
+    // Return user info
     return NextResponse.json({
       message: 'Login successful',
       id: user.id,
