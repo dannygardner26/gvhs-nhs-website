@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { encryptData } from '@/lib/encryption'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rate-limit'
+import { setUserSessionCookie } from '@/lib/auth-session'
 
 // Rate limiter: 5 requests per minute
 const limiter = rateLimit({
