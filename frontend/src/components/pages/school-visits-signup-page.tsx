@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { School, Calendar, Car, UserCheck, AlertCircle, CheckCircle, ArrowLeft, Mail } from "lucide-react";
+import { School, Calendar, Car, UserCheck, AlertCircle, CheckCircle, ArrowLeft, Mail, MapPin, BookOpen } from "lucide-react";
 import Link from "next/link";
 
 interface UserInfo {

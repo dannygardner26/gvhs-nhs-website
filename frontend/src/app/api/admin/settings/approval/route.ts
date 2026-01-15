@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '@/lib/auth-admin';
 
@@ -8,7 +8,7 @@ const supabase = createClient(
 );
 
 // GET: Fetch current setting
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     try {
         // Verify Admin Session
         const adminSession = await verifyAdminSession(request);
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 }
 
 // POST: Update setting
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
         // Verify Admin Session
         const adminSession = await verifyAdminSession(request);

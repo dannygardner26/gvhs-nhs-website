@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '@/lib/auth-admin';
 
@@ -8,7 +8,7 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
         // 1. Verify Admin Session
         const adminSession = await verifyAdminSession(request);
