@@ -1,11 +1,10 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X, UserPlus, User, Mail, Key, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { X, UserPlus, User, Mail, Key, AlertCircle, CheckCircle, Loader2, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface RegisterModalProps {
@@ -23,6 +22,9 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     password: '',
     confirmPassword: '',
   });
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [agreeToMorabito, setAgreeToMorabito] = useState(false);
+
   const { register, error, isLoading, clearError } = useAuth();
 
   // Prevent background scrolling when modal is open
@@ -37,6 +39,20 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  // Handle Anonymous Toggle
+  useEffect(() => {
+    if (isAnonymous) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: 'Anonymous',
+        lastName: 'Student'
+      }));
+    } else {
+      if (formData.firstName === 'Anonymous') setFormData(prev => ({ ...prev, firstName: '' }));
+      if (formData.lastName === 'Student') setFormData(prev => ({ ...prev, lastName: '' }));
+    }
+  }, [isAnonymous]);
 
   if (!isOpen) return null;
 
@@ -64,6 +80,10 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
       return;
     }
 
+    if (isAnonymous && !agreeToMorabito) {
+      return;
+    }
+
     const registerData = {
       userId: formData.userId,
       firstName: formData.firstName.trim(),
@@ -75,6 +95,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     const success = await register(registerData);
     if (success) {
       onClose();
+      // Reset form
       setFormData({
         userId: '',
         firstName: '',
@@ -83,6 +104,8 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
         password: '',
         confirmPassword: '',
       });
+      setIsAnonymous(false);
+      setAgreeToMorabito(false);
     }
   };
 
@@ -97,6 +120,8 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
       password: '',
       confirmPassword: '',
     });
+    setIsAnonymous(false);
+    setAgreeToMorabito(false);
   };
 
   const passwordsMatch = formData.password === formData.confirmPassword;
@@ -105,7 +130,8 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     formData.firstName.trim() &&
     formData.lastName.trim() &&
     formData.password.length >= 6 &&
-    passwordsMatch;
+    passwordsMatch &&
+    (!isAnonymous || agreeToMorabito);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -144,40 +170,74 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                 </div>
               </div>
               <p className="text-xs text-gray-500">
-                Create a 6-digit PIN you&apos;ll remember - this is NOT your school ID
+                Create a 6-digit PIN you&apos;ll remember
               </p>
               {formData.userId && formData.userId.length !== 6 && (
                 <p className="text-xs text-amber-600">PIN must be exactly 6 digits</p>
               )}
             </div>
 
-            {/* First Name */}
-            <div className="space-y-1">
-              <Label htmlFor="firstName">First Name *</Label>
-              <Input
-                id="firstName"
-                name="firstName"
-                type="text"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="John"
-                required
+            {/* Anonymous Toggle */}
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox
+                id="anonymous"
+                checked={isAnonymous}
+                onCheckedChange={(checked) => setIsAnonymous(checked as boolean)}
               />
+              <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                <EyeOff className="w-4 h-4 text-gray-500" />
+                Register Anonymously
+              </Label>
             </div>
 
+            {/* First Name */}
+            {!isAnonymous && (
+              <div className="space-y-1">
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="John"
+                  required
+                />
+              </div>
+            )}
+
             {/* Last Name */}
-            <div className="space-y-1">
-              <Label htmlFor="lastName">Last Name *</Label>
-              <Input
-                id="lastName"
-                name="lastName"
-                type="text"
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Doe"
-                required
-              />
-            </div>
+            {!isAnonymous && (
+              <div className="space-y-1">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+            )}
+
+            {/* Anonymous Agreement */}
+            {isAnonymous && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="agreeMorabito"
+                    checked={agreeToMorabito}
+                    onCheckedChange={(checked) => setAgreeToMorabito(checked as boolean)}
+                    className="mt-1"
+                  />
+                  <Label htmlFor="agreeMorabito" className="text-xs text-amber-900 leading-snug cursor-pointer">
+                    Required: I agree to see Dr. Morabito individually and provide her with my User PIN so she knows who this account belongs to.
+                  </Label>
+                </div>
+              </div>
+            )}
 
             {/* Email (Optional) */}
             <div className="space-y-1">
@@ -189,16 +249,13 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="john.doe@student.gvsd.org"
+                  placeholder="student@gvsd.org"
                   className="pl-10"
                 />
                 <div className="absolute left-3 top-3">
                   <Mail className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
-              <p className="text-xs text-gray-500">
-                For password recovery and notifications
-              </p>
             </div>
 
             {/* Password Fields */}
@@ -220,9 +277,6 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                   <Key className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
-              {formData.password && formData.password.length < 6 && (
-                <p className="text-xs text-amber-600">Password must be at least 6 characters</p>
-              )}
             </div>
 
             <div className="space-y-1">

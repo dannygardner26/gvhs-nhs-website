@@ -99,6 +99,22 @@ export async function POST(request: NextRequest) {
     const encryptedUserId = encryptData(customUserId)
     const encryptedPasswordHash = encryptData(passwordHash)
 
+    // Check if approval is required
+    let isApproved = true;
+    try {
+      const { data: settings } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'require_approval')
+        .single();
+
+      if (settings?.value === true || settings?.value === 'true') {
+        isApproved = false;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch approval settings, defaulting to auto-approve', err);
+    }
+
     // Create new user
     const { data: newUser, error: createError } = await supabase
       .from('users')
@@ -107,7 +123,8 @@ export async function POST(request: NextRequest) {
         first_name: firstName,
         last_name: lastName,
         email: cleanEmail,
-        password_hash: encryptedPasswordHash
+        password_hash: encryptedPasswordHash,
+        is_approved: isApproved
       })
       .select()
       .single()
@@ -120,17 +137,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // SUCCESS - Set Secure Cookie
-    await setUserSessionCookie(customUserId);
+    // SUCCESS - Set Secure Cookie ONLY if approved
+    if (isApproved) {
+      await setUserSessionCookie(customUserId);
 
-    return NextResponse.json({
-      message: 'Registration successful!',
-      id: newUser.id,
-      userId: customUserId,
-      firstName: firstName,
-      lastName: lastName,
-      email: cleanEmail
-    })
+      return NextResponse.json({
+        message: 'Registration successful!',
+        id: newUser.id,
+        userId: customUserId,
+        firstName: firstName,
+        lastName: lastName,
+        email: cleanEmail,
+        isApproved: true
+      })
+    } else {
+      // Account created but pending approval
+      return NextResponse.json({
+        message: 'Registration successful! Your account is pending administrator approval. Please check back later.',
+        isApproved: false
+      }, { status: 201 })
+    }
 
   } catch (error) {
     console.error('Error in register API:', error)

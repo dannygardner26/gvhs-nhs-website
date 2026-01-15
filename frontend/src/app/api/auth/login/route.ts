@@ -117,6 +117,14 @@ export async function POST(request: NextRequest) {
       }, { status: 401 })
     }
 
+    // Check Approval Status
+    if (user.is_approved === false) {
+      return NextResponse.json({
+        message: 'Your account is currently pending administrator approval. Please contact an admin or try again later.'
+      }, { status: 403 })
+    }
+
+
     // SUCCESS - Set Secure Cookie
     if (decryptedUserId) {
       await setUserSessionCookie(decryptedUserId);

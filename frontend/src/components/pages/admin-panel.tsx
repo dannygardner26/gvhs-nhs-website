@@ -14,6 +14,7 @@ import { NHSElementaryVisits } from "@/components/admin/NHSElementaryVisits";
 import { AdminOrganizationManager } from "@/components/admin/AdminOrganizationManager";
 import { AdminAnnouncementManager } from "@/components/admin/AdminAnnouncementManager";
 import { AdminUsersGrid } from "@/components/admin/AdminUsersGrid";
+import { SystemSettings } from "@/components/admin/SystemSettings";
 
 interface User {
   userId: string;
@@ -396,11 +397,10 @@ export function AdminPanel() {
         </div>
 
         {message && (
-          <div className={`mb-4 p-3 rounded-lg ${
-            message.includes("Error") || message.includes("Failed")
-              ? "bg-red-50 text-red-700"
-              : "bg-green-50 text-green-700"
-          }`}>
+          <div className={`mb-4 p-3 rounded-lg ${message.includes("Error") || message.includes("Failed")
+            ? "bg-red-50 text-red-700"
+            : "bg-green-50 text-green-700"
+            }`}>
             {message}
           </div>
         )}
@@ -436,143 +436,145 @@ export function AdminPanel() {
 
           {/* Tab 1: General Admin */}
           <TabsContent value="general" className="space-y-6">
+            {/* System Settings */}
+            <SystemSettings />
+
             {/* Active Users Panel */}
             <ActiveUsersPanel onForceCheckout={() => fetchUsers()} />
 
             {/* Opportunity Suggestions */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Lightbulb className="w-5 h-5 mr-2" />
-              Volunteer Opportunity Suggestions ({opportunitySuggestions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {opportunitySuggestions.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">No suggestions submitted yet</div>
-            ) : (
-              <div className="space-y-4">
-                {opportunitySuggestions.map((suggestion: { id: string; opportunity_title: string; description: string; status: string; nhs_user_id?: string; created_at?: string; organization_name?: string; contact_info?: string; estimated_hours?: number; preferred_location?: string }) => (
-                  <div key={suggestion.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg">{suggestion.opportunity_title}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          suggestion.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          suggestion.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {suggestion.status}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSuggestionDelete(suggestion.id)}
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 h-7 w-7"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-gray-600 mb-3">{suggestion.description}</p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Submitted by:</span> {suggestion.nhs_user_id}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Submitted:</span> {suggestion.created_at ? formatDateTime(suggestion.created_at) : 'N/A'}
-                      </div>
-                      {suggestion.organization_name && (
-                        <div>
-                          <span className="font-medium text-gray-700">Organization:</span> {suggestion.organization_name}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  Volunteer Opportunity Suggestions ({opportunitySuggestions.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {opportunitySuggestions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No suggestions submitted yet</div>
+                ) : (
+                  <div className="space-y-4">
+                    {opportunitySuggestions.map((suggestion: { id: string; opportunity_title: string; description: string; status: string; nhs_user_id?: string; created_at?: string; organization_name?: string; contact_info?: string; estimated_hours?: number; preferred_location?: string }) => (
+                      <div key={suggestion.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-lg">{suggestion.opportunity_title}</h3>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 text-xs rounded-full ${suggestion.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              suggestion.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                              {suggestion.status}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSuggestionDelete(suggestion.id)}
+                              className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 h-7 w-7"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                      {suggestion.estimated_hours && (
-                        <div>
-                          <span className="font-medium text-gray-700">Estimated Hours:</span> {suggestion.estimated_hours}
+                        <p className="text-gray-600 mb-3">{suggestion.description}</p>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-700">Submitted by:</span> {suggestion.nhs_user_id}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Submitted:</span> {suggestion.created_at ? formatDateTime(suggestion.created_at) : 'N/A'}
+                          </div>
+                          {suggestion.organization_name && (
+                            <div>
+                              <span className="font-medium text-gray-700">Organization:</span> {suggestion.organization_name}
+                            </div>
+                          )}
+                          {suggestion.estimated_hours && (
+                            <div>
+                              <span className="font-medium text-gray-700">Estimated Hours:</span> {suggestion.estimated_hours}
+                            </div>
+                          )}
+                          {suggestion.contact_info && (
+                            <div>
+                              <span className="font-medium text-gray-700">Contact:</span> {suggestion.contact_info}
+                            </div>
+                          )}
+                          {suggestion.preferred_location && (
+                            <div>
+                              <span className="font-medium text-gray-700">Location:</span> {suggestion.preferred_location}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {suggestion.contact_info && (
-                        <div>
-                          <span className="font-medium text-gray-700">Contact:</span> {suggestion.contact_info}
-                        </div>
-                      )}
-                      {suggestion.preferred_location && (
-                        <div>
-                          <span className="font-medium text-gray-700">Location:</span> {suggestion.preferred_location}
-                        </div>
-                      )}
-                    </div>
-                    <div className="bg-blue-50 p-3 rounded-lg mt-3 border border-blue-200">
-                      <div className="text-sm font-medium text-blue-900 mb-2">
-                        📧 Contact Information:
-                      </div>
-                      <div className="text-sm text-blue-800">
-                        {suggestion.contact_info ? (
-                          <>
-                            <strong>Email:</strong> {suggestion.contact_info}
-                            <br />
-                            <strong>For:</strong> {suggestion.opportunity_title}
-                            {suggestion.organization_name && (
+                        <div className="bg-blue-50 p-3 rounded-lg mt-3 border border-blue-200">
+                          <div className="text-sm font-medium text-blue-900 mb-2">
+                            📧 Contact Information:
+                          </div>
+                          <div className="text-sm text-blue-800">
+                            {suggestion.contact_info ? (
                               <>
+                                <strong>Email:</strong> {suggestion.contact_info}
                                 <br />
-                                <strong>Organization:</strong> {suggestion.organization_name}
+                                <strong>For:</strong> {suggestion.opportunity_title}
+                                {suggestion.organization_name && (
+                                  <>
+                                    <br />
+                                    <strong>Organization:</strong> {suggestion.organization_name}
+                                  </>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <strong>Submitted by NHS Student:</strong> {suggestion.nhs_user_id}
+                                <br />
+                                <strong>Contact via:</strong> pmorabito@gvsd.org for student contact information
                               </>
                             )}
-                          </>
-                        ) : (
-                          <>
-                            <strong>Submitted by NHS Student:</strong> {suggestion.nhs_user_id}
-                            <br />
-                            <strong>Contact via:</strong> pmorabito@gvsd.org for student contact information
-                          </>
-                        )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="w-5 h-5 mr-2" />
-              All Users ({users.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">Loading users...</div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">No users registered yet</div>
-            ) : (
-              <div className="space-y-2">
-                {users.map((user) => {
-                  const userId = user.user_id || user.userId; // Use database field name
-                  return (
-                    <UserCard
-                      key={userId}
-                      user={user}
-                      onForceCheckout={handleForceCheckout}
-                      onChangePin={handleChangePin}
-                      onDeleteUser={handleDeleteUser}
-                      onToggleExpand={toggleUserExpand}
-                      isExpanded={expandedUserId === userId}
-                      userSessions={userSessions[userId] || []}
-                      userHours={userHours[userId]}
-                      formatDateTime={formatDateTime}
-                      formatDuration={formatDuration}
-                      isDeleting={deletingUserId === userId}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  All Users ({users.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">Loading users...</div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No users registered yet</div>
+                ) : (
+                  <div className="space-y-2">
+                    {users.map((user) => {
+                      const userId = user.user_id || user.userId; // Use database field name
+                      return (
+                        <UserCard
+                          key={userId}
+                          user={user}
+                          onForceCheckout={handleForceCheckout}
+                          onChangePin={handleChangePin}
+                          onDeleteUser={handleDeleteUser}
+                          onToggleExpand={toggleUserExpand}
+                          isExpanded={expandedUserId === userId}
+                          userSessions={userSessions[userId] || []}
+                          userHours={userHours[userId]}
+                          formatDateTime={formatDateTime}
+                          formatDuration={formatDuration}
+                          isDeleting={deletingUserId === userId}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Tab: Users Grid */}

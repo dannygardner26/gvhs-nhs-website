@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
           monthly_service_submitted: monthlyServiceUserIds.has(decryptedUserId),
           isp_submitted: ispUserIds.has(decryptedUserId),
           total_hours: parseFloat(totalHours.toFixed(2)),
+          is_approved: user.is_approved, // Include approval status
           // Remove password hash from response
           password_hash: undefined
         }
@@ -141,6 +142,7 @@ export async function GET(request: NextRequest) {
           monthly_service_submitted: false,
           isp_submitted: false,
           total_hours: 0,
+          is_approved: user.is_approved, // Include approval status
           password_hash: undefined
         }
       }

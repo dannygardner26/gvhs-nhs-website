@@ -45,15 +45,35 @@ export function SchoolVisitsSignupPage() {
   const [rideCapacity, setRideCapacity] = useState("");
   const [teacherLastName, setTeacherLastName] = useState("");
 
-  // Available events (would come from API in production)
-  const availableEvents: SchoolVisitEvent[] = [
-    { id: "1", date: "2024-12-12", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "2", date: "2025-01-15", school: "Sugartown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "3", date: "2025-01-22", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "4", date: "2025-02-05", school: "General Wayne Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "5", date: "2025-02-12", school: "Sugartown Elementary", time: "9:00 AM - 10:30 AM" },
-    { id: "6", date: "2025-02-26", school: "Charlestown Elementary", time: "9:00 AM - 10:30 AM" },
-  ];
+  // Available events (now fetched dynamically)
+  const [availableEvents, setAvailableEvents] = useState<SchoolVisitEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      // organization_id for 'nhs-elementary'
+      const orgId = "35aeb7d0-899c-4924-a29f-7fbe7279f2a8";
+      const response = await fetch(`/api/events?organization_id=${orgId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const mappedEvents = data.map((event: any) => ({
+          id: event.id,
+          date: event.event_date,
+          school: event.location, // Using location as school name
+          time: `${event.start_time.slice(0, 5)} - ${event.end_time.slice(0, 5)}`
+        }));
+        setAvailableEvents(mappedEvents);
+      }
+    } catch (error) {
+      console.error("Error fetching available events:", error);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Check if user is logged in from localStorage
@@ -145,7 +165,7 @@ export function SchoolVisitsSignupPage() {
     }
   };
 
-  if (loading) {
+  if (loading || eventsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-600">Loading...</div>
@@ -180,7 +200,7 @@ export function SchoolVisitsSignupPage() {
               NHS Elementary School Visits
             </CardTitle>
             <p className="text-gray-600 mt-2">
-              <strong>Next visit: Friday, December 12th</strong> - Sign up to read with elementary students at local schools
+              <strong>Next visit: {availableEvents.length > 0 ? new Date(availableEvents[0].date + "T00:00:00").toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric' }) : 'To Be Announced'}</strong> - Sign up to read with elementary students at local schools
             </p>
           </CardHeader>
 
@@ -239,155 +259,74 @@ export function SchoolVisitsSignupPage() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Logged in status */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <UserCheck className="w-5 h-5" />
-                    <span className="font-medium">Signed in as: {userInfo?.username}</span>
-                  </div>
-                  <p className="text-sm text-green-600 mt-1">
-                    User ID: {userInfo?.userId}
+              <div className="space-y-6">
+                {/* RSVP INSTRUCTIONS */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 flex items-center justify-center gap-2">
+                    <MapPin className="w-6 h-6" />
+                    RSVP Required on Canvas/Remind
+                  </h3>
+                  <p className="text-gray-700 mb-6">
+                    Enrollment for NHS Elementary Visits is <strong>NOT</strong> handled on this website.
+                    Please use the official registration channels:
                   </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                      <div className="bg-blue-100 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <BookOpen className="w-5 h-5 text-blue-700" />
+                      </div>
+                      <h4 className="font-bold text-gray-900 mb-1">Canvas</h4>
+                      <p className="text-sm text-gray-600">Check the NHS Course for the latest signup module.</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                      <div className="bg-amber-100 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Mail className="w-5 h-5 text-amber-700" />
+                      </div>
+                      <h4 className="font-bold text-gray-900 mb-1">Remind</h4>
+                      <p className="text-sm text-gray-600">The Google Form link is sent out via Remind alerts.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                    <strong>Note:</strong> You will use this website <strong>AFTER</strong> the visit
+                    to log your service hours and verify your check-in.
+                  </div>
                 </div>
 
-                {/* Event Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="event" className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Select Event Date & School
-                  </Label>
-                  <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose an event..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableEvents.map((event, index) => {
-                        const isNext = index === 0;
-                        return (
-                          <SelectItem key={event.id} value={event.id}>
-                            {isNext && "🔥 NEXT: "}
-                            {new Date(event.date).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}{" "}
-                            - {event.school} ({event.time})
-                            {isNext && " - Friday 12/12"}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Transportation Section */}
-                <div className="space-y-4 bg-gray-50 rounded-lg p-4">
+                {/* Event Schedule Display Only */}
+                <div className="space-y-4">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <Car className="w-4 h-4" />
-                    Transportation
+                    <Calendar className="w-4 h-4" />
+                    Upcoming Visit Schedule
                   </h4>
-
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      id="hasRide"
-                      checked={hasRide}
-                      onCheckedChange={(checked) => setHasRide(checked === true)}
-                    />
-                    <div className="space-y-1">
-                      <Label htmlFor="hasRide" className="font-normal cursor-pointer">
-                        I have my own ride to the school
-                      </Label>
-                      <p className="text-xs text-gray-500">
-                        Check this if you can get to the elementary school yourself
-                      </p>
-                    </div>
+                  <div className="grid gap-3">
+                    {availableEvents.length > 0 ? availableEvents.map((event) => (
+                      <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <div>
+                          <div className="font-bold text-gray-900">
+                            {new Date(event.date + "T00:00:00").toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric' })}
+                          </div>
+                          <div className="text-sm text-gray-500">{event.school}</div>
+                        </div>
+                        <div className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                          {event.time}
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="text-center py-4 text-gray-500 italic">
+                        No upcoming visits scheduled.
+                      </div>
+                    )}
                   </div>
-
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      id="canGiveRide"
-                      checked={canGiveRide}
-                      onCheckedChange={(checked) => setCanGiveRide(checked === true)}
-                    />
-                    <div className="space-y-1">
-                      <Label htmlFor="canGiveRide" className="font-normal cursor-pointer">
-                        I can give a ride to other students
-                      </Label>
-                      <p className="text-xs text-gray-500">
-                        Check this if you can drive other NHS members
-                      </p>
-                    </div>
-                  </div>
-
-                  {canGiveRide && (
-                    <div className="ml-6">
-                      <Label htmlFor="rideCapacity">How many passengers can you take?</Label>
-                      <Input
-                        id="rideCapacity"
-                        type="number"
-                        min="1"
-                        max="6"
-                        value={rideCapacity}
-                        onChange={(e) => setRideCapacity(e.target.value)}
-                        placeholder="Number of passengers"
-                        className="mt-1 w-32"
-                      />
-                    </div>
-                  )}
                 </div>
 
-                {/* 7th Period Teacher */}
-                <div className="space-y-2">
-                  <Label htmlFor="teacherLastName">
-                    7th Period Teacher&apos;s Last Name
-                  </Label>
-                  <Input
-                    id="teacherLastName"
-                    type="text"
-                    value={teacherLastName}
-                    onChange={(e) => setTeacherLastName(e.target.value)}
-                    placeholder="e.g., Smith"
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500">
-                    This helps us organize permissions and notify your teacher
-                  </p>
-                </div>
-
-                {/* Important Info */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <p className="text-sm text-amber-800">
-                    <strong>Note:</strong> You will need to be excused from 7th period and may need a permission slip.
-                    Contact Dr. Morabito at{" "}
-                    <a href="mailto:pmorabito@gvsd.org" className="text-royal-blue hover:underline">
-                      pmorabito@gvsd.org
-                    </a>{" "}
-                    with any questions.
-                  </p>
-                </div>
-
-                {message && (
-                  <div
-                    className={`p-3 rounded-lg text-center ${
-                      message.includes("Error") || message.includes("must")
-                        ? "bg-red-50 text-red-700"
-                        : "bg-green-50 text-green-700"
-                    }`}
-                  >
-                    {message}
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-royal-blue hover:bg-blue-700"
-                >
-                  {submitting ? "Signing Up..." : "Sign Up for This Visit"}
-                </Button>
-              </form>
+                <Link href="/volunteering" className="block">
+                  <Button className="w-full bg-royal-blue hover:bg-blue-700">
+                    Back to Volunteering
+                  </Button>
+                </Link>
+              </div>
             )}
 
             {/* Contact Info */}

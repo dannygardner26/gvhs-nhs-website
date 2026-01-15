@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Users, Camera, MapPin, Calendar, Gamepad2, HandHeart, Laptop, Mail, ExternalLink, BookOpen, Globe, Monitor, Sparkles, Building } from "lucide-react";
+import { Heart, Users, Camera, MapPin, Calendar, Gamepad2, HandHeart, Laptop, Mail, ExternalLink, BookOpen, Globe, Monitor, Sparkles, Building, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { VolunteerInterestForm } from "@/components/forms/VolunteerInterestForm";
 import type { Organization, VolunteerEvent } from "@/lib/types";
@@ -207,6 +207,21 @@ export function VolunteeringPage() {
           const eventId = org.slug || org.id;
           const existingSubmission = submittedInterests.get(eventId);
           const hasSubmitted = !!existingSubmission;
+
+          if (org.slug === 'nhs-elementary') {
+            return (
+              <Button
+                className="w-full mb-2 bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  alert("📍 NHS Elementary Visits\n\nPlease RSVP Through Canvas or the Google Form sent via Remind. This site is for tracking your service hours, but actual registration is handled by Dr. Morabito on those platforms.");
+                }}
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                How to RSVP
+              </Button>
+            );
+          }
+
           return (
             <Button
               className={`w-full mb-2 ${hasSubmitted ? 'bg-green-700 hover:bg-green-800' : 'bg-green-600 hover:bg-green-700'}`}
@@ -525,11 +540,10 @@ export function VolunteeringPage() {
                   </div>
 
                   {formMessage && (
-                    <div className={`p-3 rounded-lg text-center text-sm ${
-                      formMessage.includes("Error")
-                        ? "bg-red-50 text-red-700"
-                        : "bg-green-50 text-green-700"
-                    }`}>
+                    <div className={`p-3 rounded-lg text-center text-sm ${formMessage.includes("Error")
+                      ? "bg-red-50 text-red-700"
+                      : "bg-green-50 text-green-700"
+                      }`}>
                       {formMessage}
                     </div>
                   )}

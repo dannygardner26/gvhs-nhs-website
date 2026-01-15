@@ -27,11 +27,12 @@ interface UserData {
   checkedInAt: string | null;
   total_hours: number;
   created_at: string;
+  is_approved?: boolean;
 }
 
 type SortField = 'name' | 'total_hours' | 'created_at';
 type SortOrder = 'asc' | 'desc';
-type FilterStatus = 'all' | 'checked_in';
+type FilterStatus = 'all' | 'checked_in' | 'pending';
 
 interface AdminUsersGridProps {
   onChangePin?: (email: string) => void;
@@ -44,6 +45,9 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+
+  const [approving, setApproving] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -60,6 +64,33 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
       console.error('Error fetching users:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleApprove = async (userId: string, email: string) => {
+    if (!confirm(`Approve user ${email}? This will allow them to login.`)) return;
+
+    setApproving(userId);
+    try {
+      const response = await fetch('/api/checkin/admin/approve-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }) // Sending real DB ID
+      });
+
+      if (response.ok) {
+        // Update local state
+        setUsers(prev => prev.map(u =>
+          u.real_user_id === userId ? { ...u, is_approved: true } : u
+        ));
+      } else {
+        alert('Failed to approve user');
+      }
+    } catch (err) {
+      console.error('Error approving user:', err);
+      alert('Error approving user');
+    } finally {
+      setApproving(null);
     }
   };
 
@@ -89,6 +120,8 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
     // Apply status filter
     if (filterStatus === 'checked_in') {
       result = result.filter(user => user.isCheckedIn);
+    } else if (filterStatus === 'pending') {
+      result = result.filter(user => user.is_approved === false);
     }
 
     // Apply sorting
@@ -113,7 +146,8 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
 
   const stats = useMemo(() => ({
     total: users.length,
-    checkedIn: users.filter(u => u.isCheckedIn).length
+    checkedIn: users.filter(u => u.isCheckedIn).length,
+    pending: users.filter(u => u.is_approved === false).length
   }), [users]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -141,7 +175,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card
           className={`cursor-pointer transition-all ${filterStatus === 'all' ? 'ring-2 ring-blue-500' : ''}`}
           onClick={() => setFilterStatus('all')}
@@ -158,6 +192,15 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.checkedIn}</div>
             <div className="text-sm text-gray-500">Checked In Now</div>
+          </CardContent>
+        </Card>
+        <Card
+          className={`cursor-pointer transition-all ${filterStatus === 'pending' ? 'ring-2 ring-amber-500' : ''}`}
+          onClick={() => setFilterStatus('pending')}
+        >
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
+            <div className="text-sm text-gray-500">Pending Approval</div>
           </CardContent>
         </Card>
       </div>
@@ -184,6 +227,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
               >
                 <option value="all">All Users</option>
                 <option value="checked_in">Checked In Now</option>
+                <option value="pending">Pending Approval</option>
               </select>
             </div>
           </div>
@@ -209,7 +253,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
                   Email
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                  Library Status
+                  Status
                 </th>
                 <th
                   className="px-4 py-3 text-center text-sm font-semibold text-gray-900 cursor-pointer hover:bg-gray-100"
@@ -224,7 +268,7 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredAndSortedUsers.map((user) => (
-                <tr key={user.real_user_id} className="hover:bg-gray-50">
+                <tr key={user.real_user_id} className={`hover:bg-gray-50 ${user.is_approved === false ? 'bg-amber-50/50' : ''}`}>
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/users/${user.decrypted_user_id}/profile`}
@@ -241,16 +285,24 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
                     {user.email}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {user.isCheckedIn ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        In Library
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
-                        Not in Library
-                      </span>
-                    )}
+                    <div className="flex flex-col gap-1 items-center">
+                      {user.isCheckedIn ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          In Library
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                          Not in Library
+                        </span>
+                      )}
+
+                      {user.is_approved === false && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">
+                          Pending Approval
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center gap-1 text-sm font-medium">
@@ -260,6 +312,17 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
+                      {user.is_approved === false && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleApprove(user.real_user_id, user.email)}
+                          disabled={approving === user.real_user_id}
+                        >
+                          {approving === user.real_user_id ? 'Wait...' : 'Approve'}
+                        </Button>
+                      )}
+
                       <Link href={`/admin/users/${user.decrypted_user_id}/profile`}>
                         <Button size="sm" variant="outline">
                           Profile
@@ -293,3 +356,4 @@ export function AdminUsersGrid({ onChangePin }: AdminUsersGridProps) {
     </div>
   );
 }
+
