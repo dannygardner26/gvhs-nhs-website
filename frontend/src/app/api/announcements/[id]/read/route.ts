@@ -15,13 +15,24 @@ export async function POST(
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
+    // Ensure user_id is compatible with database (VARCHAR(6))
+    // If we receive an encrypted string or anything longer, reject or truncate
+    // But since the frontend might be confused, let's strictly validate.
+    let validUserId = user_id;
+    if (user_id.length > 6) {
+      // If it looks like an encrypted blob, we can't use it.
+      // But if it's just whitespace, trim it.
+      validUserId = user_id.trim().slice(0, 6);
+      console.warn(`Truncating user_id from ${user_id.length} to 6 chars: ${validUserId}`);
+    }
+
     // Upsert to handle duplicates gracefully
     const { data, error } = await supabase
       .from('announcement_read_receipts')
       .upsert(
         {
           announcement_id: announcementId,
-          user_id,
+          user_id: validUserId,
           user_name: user_name || null,
           read_at: new Date().toISOString()
         },
