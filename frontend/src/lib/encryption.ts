@@ -6,10 +6,14 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'fallback-key-32-chars-long
 const ALGORITHM = 'aes-256-gcm';
 
 // Secure data encryption using AES-256-GCM
+// Ensure key is 32 bytes for AES-256
+const getKey = () => crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+
 export function encryptData(text: string): string {
   try {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+    // Use createCipheriv instead of deprecated createCipher
+    const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv);
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -19,13 +23,13 @@ export function encryptData(text: string): string {
     return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   } catch (error) {
     console.error('Encryption failed:', error);
-    return text;
+    return text; // Fallback to plain text if encryption fails (better than crashing, but log it)
   }
 }
 
 export function decryptData(encryptedText: string): string {
   try {
-    if (!encryptedText.includes(':')) {
+    if (!encryptedText || !encryptedText.includes(':')) {
       return encryptedText; // Return as-is if not encrypted
     }
 
@@ -34,11 +38,12 @@ export function decryptData(encryptedText: string): string {
       return encryptedText; // Return as-is if format is invalid
     }
 
-    const _iv = Buffer.from(parts[0], 'hex');
+    const iv = Buffer.from(parts[0], 'hex');
     const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
 
-    const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
+    // Use createDecipheriv instead of deprecated createDecipher
+    const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), iv);
     decipher.setAuthTag(authTag);
 
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');

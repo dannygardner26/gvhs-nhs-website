@@ -10,6 +10,7 @@ import { Heart, Users, Camera, MapPin, Calendar, Gamepad2, HandHeart, Laptop, Ma
 import Image from "next/image";
 import { VolunteerInterestForm } from "@/components/forms/VolunteerInterestForm";
 import type { Organization, VolunteerEvent } from "@/lib/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // Icon mapping for dynamic icon rendering
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -52,6 +53,7 @@ interface SubmittedInterest {
   created_at: string;
 }
 
+
 export function VolunteeringPage() {
   const { user, isAuthenticated } = useAuth();
   const [organizations, setOrganizations] = useState<OrganizationWithEvents[]>([]);
@@ -69,6 +71,7 @@ export function VolunteeringPage() {
   const [formMessage, setFormMessage] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithEvents | null>(null);
   const [showInterestForm, setShowInterestForm] = useState(false);
+  const [showRSVPModal, setShowRSVPModal] = useState(false);
   const [submittedInterests, setSubmittedInterests] = useState<Map<string, SubmittedInterest>>(new Map());
 
   useEffect(() => {
@@ -213,7 +216,7 @@ export function VolunteeringPage() {
               <Button
                 className="w-full mb-2 bg-blue-600 hover:bg-blue-700"
                 onClick={() => {
-                  alert("📍 NHS Elementary Visits\n\nPlease RSVP Through Canvas or the Google Form sent via Remind. This site is for tracking your service hours, but actual registration is handled by Dr. Morabito on those platforms.");
+                  setShowRSVPModal(true);
                 }}
               >
                 <AlertCircle className="w-4 h-4 mr-2" />
@@ -552,6 +555,39 @@ export function VolunteeringPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* RSVP Instruction Modal */}
+        <Dialog open={showRSVPModal} onOpenChange={setShowRSVPModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl text-blue-800">
+                <MapPin className="w-5 h-5" />
+                NHS Elementary Visits RSVP
+              </DialogTitle>
+              <DialogDescription className="pt-2">
+                Actual registration for elementary visits is handled outside of this website.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="bg-blue-50 p-4 rounded-lg my-2 border border-blue-100">
+              <h4 className="font-semibold text-blue-900 mb-2">How to Sign Up:</h4>
+              <ul className="list-disc leading-relaxed pl-5 space-y-2 text-blue-800">
+                <li>Check the <strong>Canvas NHS Course</strong> for the signup module.</li>
+                <li>Look for the <strong>Google Form</strong> link sent via Remind.</li>
+              </ul>
+            </div>
+
+            <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-sm text-amber-800">
+              <strong>Note:</strong> You will use this website <strong>AFTER</strong> your visit to log your service hours.
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setShowRSVPModal(false)} className="bg-blue-600 hover:bg-blue-700">
+                Got it
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Volunteer Interest Form Modal */}
         {showInterestForm && selectedOrganization && (

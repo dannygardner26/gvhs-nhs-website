@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { encryptData } from '@/lib/encryption'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rate-limit'
 import { setUserSessionCookie } from '@/lib/auth-session'
+
+// Initialize Supabase with Service Role Key to bypass RLS for user creation
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 // Rate limiter: 5 requests per minute
 const limiter = rateLimit({
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (email && email.trim() !== "") {
       cleanEmail = email.toLowerCase().trim();
       // Check if email is already taken
-      const { data: existingEmail } = await supabase
+      const { data: existingEmail } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('email', cleanEmail)
@@ -66,7 +72,7 @@ export async function POST(request: NextRequest) {
     const fullName = `${firstName} ${lastName}`
 
     // Check if user with this name already exists
-    const { data: existingUserWithName } = await supabase
+    const { data: existingUserWithName } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('first_name', firstName)
@@ -80,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if the custom user ID is already taken
-    const { data: existingUserId } = await supabase
+    const { data: existingUserId } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('user_id', customUserId)
@@ -99,10 +105,10 @@ export async function POST(request: NextRequest) {
     const encryptedUserId = encryptData(customUserId)
     const encryptedPasswordHash = encryptData(passwordHash)
 
-    // Check if approval is required
+    // Check if approval is required (use generic client for settings is fine, but admin works too)
     let isApproved = true;
     try {
-      const { data: settings } = await supabase
+      const { data: settings } = await supabaseAdmin
         .from('system_settings')
         .select('value')
         .eq('key', 'require_approval')
@@ -116,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user
-    const { data: newUser, error: createError } = await supabase
+    const { data: newUser, error: createError } = await supabaseAdmin
       .from('users')
       .insert({
         user_id: encryptedUserId,
