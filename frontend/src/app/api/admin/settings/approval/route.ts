@@ -11,9 +11,9 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
     try {
         // Verify Admin Session
-        const adminSession = await verifyAdminSession(request);
-        if (!adminSession) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const authError = await verifyAdminSession(request);
+        if (authError) {
+            return authError;
         }
 
         const { data, error } = await supabase
@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         // Verify Admin Session
-        const adminSession = await verifyAdminSession(request);
-        if (!adminSession) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const authError = await verifyAdminSession(request);
+        if (authError) {
+            return authError;
         }
 
         const body = await request.json();
